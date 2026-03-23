@@ -1,0 +1,111 @@
+/* React Flow dark theme overrides */
+.react-flow__background {
+  background-color: #002122 !important;
+}
+
+.react-flow__controls button {
+  background-color: #1F4041 !important;
+  border-color: #38595A !important;
+  color: #70E6E8 !important;
+  fill: #70E6E8 !important;
+}
+
+.react-flow__controls button:hover {
+  background-color: #38595A !important;
+}
+
+.react-flow__controls button svg {
+  fill: #70E6E8 !important;
+}
+
+.react-flow__minimap {
+  background-color: #0D2E2F !important;
+  border: 1px solid #38595A !important;
+  border-radius: 8px !important;
+}
+
+.react-flow__edge-path {
+  stroke: #38595A;
+}
+
+.react-flow__attribution {
+  display: none !important;
+}
+
+.react-flow__panel {
+  margin: 8px !important;
+}
+
+/* Edge label styling */
+.react-flow__edge-text {
+  fill: #8AABAD !important;
+  font-size: 11px !important;
+}
+
+.react-flow__edge-textbg {
+  fill: #0D2E2F !important;
+}
+
+/* Handle visibility — small dots on the circle edges */
+.react-flow__handle {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.react-flow__node:hover .react-flow__handle {
+  opacity: 1;
+}
+
+/* Node animations */
+@keyframes nodePulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(112, 230, 232, 0.3); }
+  50% { box-shadow: 0 0 24px rgba(112, 230, 232, 0.7); }
+}
+
+@keyframes edgeDash {
+  to { stroke-dashoffset: -20; }
+}
+
+.flow-node-executing {
+  animation: nodePulse 1.5s ease-in-out infinite;
+  border-radius: 50%;
+}
+
+.flow-edge-active {
+  animation: edgeDash 1s linear infinite;
+  stroke-dasharray: 8 4;
+}
+
+/* Detail panel slide-in */
+.flow-detail-panel {
+  animation: slideInRight 0.3s ease-out both;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Node hover effect */
+.react-flow__node {
+  transition: filter 0.2s ease;
+}
+
+.react-flow__node:hover {
+  filter: brightness(1.15);
+}
+
+/* Drag cursor */
+.react-flow__node.draggable {
+  cursor: grab;
+}
+
+.react-flow__node.draggable:active,
+.react-flow__node.dragging {
+  cursor: grabbing;
+}
+
+/* Smoothstep edge rounded corners */
+.react-flow__edge.animated path {
+  animation: edgeDash 0.8s linear infinite;
+}

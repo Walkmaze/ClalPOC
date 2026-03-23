@@ -1,0 +1,101 @@
+import { useState } from 'react'
+
+const RESULT_STYLES = {
+  SUCCESS: 'text-success',
+  COMPLETED: 'text-success',
+  PASS: 'text-success',
+  FAIL: 'text-error',
+  BLOCKED: 'text-error',
+  REJECTED: 'text-error',
+  WARNING: 'text-warning',
+  AWAITING_DOCUMENTS: 'text-warning',
+  AWAITING_CONSENT: 'text-warning',
+  RUNNING: 'text-accent',
+  INFO: 'text-accent',
+  PENDING: 'text-text-muted',
+}
+
+export default function AuditTrail({ entries, processInfo }) {
+  const [expanded, setExpanded] = useState(true)
+
+  if (!entries || entries.length === 0) return null
+
+  return (
+    <div className="bg-bg-card rounded-xl border border-border overflow-hidden mt-4">
+      {/* Header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between p-4 hover:bg-bg-card-hover transition-colors"
+      >
+        <h3 className="text-sm font-semibold text-accent uppercase tracking-wider">Audit Trail</h3>
+        <span className="text-text-muted text-xs">{expanded ? '▲' : '▼'} {entries.length} entries</span>
+      </button>
+
+      {expanded && (
+        <div className="px-4 pb-4">
+          {/* Process Info */}
+          {processInfo && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4 bg-bg-primary rounded-lg p-3">
+              <div>
+                <span className="text-[10px] text-text-muted uppercase">Process ID</span>
+                <p className="text-xs font-mono text-accent">{processInfo.processId}</p>
+              </div>
+              <div>
+                <span className="text-[10px] text-text-muted uppercase">Member</span>
+                <p className="text-xs text-text-primary">{processInfo.memberId} — {processInfo.memberName}</p>
+              </div>
+              <div>
+                <span className="text-[10px] text-text-muted uppercase">Fund Type</span>
+                <p className="text-xs text-text-primary">{processInfo.fundType}</p>
+              </div>
+              {processInfo.useCase && (
+                <div>
+                  <span className="text-[10px] text-text-muted uppercase">Action</span>
+                  <p className="text-xs text-text-primary">{processInfo.useCase}</p>
+                </div>
+              )}
+              <div>
+                <span className="text-[10px] text-text-muted uppercase">Status</span>
+                <p className={`text-xs font-semibold ${RESULT_STYLES[processInfo.status] || 'text-text-primary'}`}>{processInfo.status}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Action Log Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-text-muted uppercase text-[10px] border-b border-border">
+                  <th className="text-left py-2 px-2 w-8">#</th>
+                  <th className="text-left py-2 px-2 w-20">Time</th>
+                  <th className="text-left py-2 px-2">Action</th>
+                  <th className="text-left py-2 px-2 w-24">Category</th>
+                  <th className="text-left py-2 px-2 w-28">Source</th>
+                  <th className="text-left py-2 px-2 w-20">Result</th>
+                  <th className="text-left py-2 px-2">Details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((entry, i) => (
+                  <tr
+                    key={i}
+                    className="border-b border-border/50 animate-slide-in-left hover:bg-bg-primary/50"
+                    style={{ animationDelay: `${i * 30}ms` }}
+                  >
+                    <td className="py-2 px-2 text-text-muted">{i + 1}</td>
+                    <td className="py-2 px-2 font-mono text-text-muted">{entry.timestamp}</td>
+                    <td className="py-2 px-2 text-text-primary">{entry.action}</td>
+                    <td className="py-2 px-2 text-text-muted">{entry.category}</td>
+                    <td className="py-2 px-2 font-mono text-text-muted">{entry.source || '—'}</td>
+                    <td className={`py-2 px-2 font-semibold ${RESULT_STYLES[entry.result] || 'text-text-muted'}`}>{entry.result}</td>
+                    <td className="py-2 px-2 text-text-muted max-w-[200px] truncate">{entry.details}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
