@@ -4,6 +4,6 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  base: '/Clal-POC-v2/',
+  base: '/ClalPOC/',
   server: { port: 5173 }
 })
