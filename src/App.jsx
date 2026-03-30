@@ -149,7 +149,7 @@ export default function App() {
 
       if (result.success) {
         if (phase === 'launch' && result.serviceNumber) {
-          updateExecution(execId, { easymazeServiceNumber: result.serviceNumber, easymazeStatus: 'synced' })
+          updateExecution(execId, { easymazeServiceId: result.serviceId, easymazeServiceNumber: result.serviceNumber, easymazeStatus: 'synced' })
         } else if (phase === 'launch') {
           updateExecution(execId, { easymazeStatus: 'synced' })
         }
@@ -452,6 +452,7 @@ export default function App() {
       auditEntries: [],
       apiLogs: [],
       easymazeStatus: null,
+      easymazeServiceId: null,
       easymazeServiceNumber: null,
       easymazeError: null,
       error: null,

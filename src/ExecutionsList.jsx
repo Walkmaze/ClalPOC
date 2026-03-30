@@ -351,13 +351,22 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder }) 
                   </td>
                   <td className="py-3 px-4 text-xs text-text-muted">{relTime}</td>
                   <td className="py-3 px-4 text-xs text-text-muted">{exec.useCaseLabel}</td>
-                  <td className="py-3 px-2 text-center">
-                    {exec.easymazeStatus === 'synced' && (
-                      <span className="text-success text-xs" title={exec.easymazeServiceNumber ? `Service #${exec.easymazeServiceNumber}` : 'Synced'}>🔗</span>
-                    )}
-                    {exec.easymazeStatus === 'failed' && (
+                  <td className="py-3 px-2 text-center" onClick={e => e.stopPropagation()}>
+                    {exec.easymazeStatus === 'synced' && exec.easymazeServiceId ? (
+                      <a
+                        href={`https://app.dev-easymaze.mazemateapp.com/services/${exec.easymazeServiceId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-success hover:text-success/80 text-xs transition-colors"
+                        title={`Open Service #${exec.easymazeServiceNumber || exec.easymazeServiceId} in Easymaze`}
+                      >
+                        🔗
+                      </a>
+                    ) : exec.easymazeStatus === 'synced' ? (
+                      <span className="text-success text-xs" title="Synced">🔗</span>
+                    ) : exec.easymazeStatus === 'failed' ? (
                       <span className="text-error text-xs" title={exec.easymazeError || 'Failed'}>⚠️🔗</span>
-                    )}
+                    ) : null}
                   </td>
                   <td className="py-3 px-3 text-text-muted hover:text-accent transition-colors">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

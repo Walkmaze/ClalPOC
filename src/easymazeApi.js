@@ -196,8 +196,9 @@ export async function createEasymazeService(execution, settings, phase) {
     logEntry.responseBody = responseData
 
     if (response.ok) {
-      const serviceNumber = responseData?.data?.service_number || responseData?.data?.id || responseData?.service_number || null
-      return { success: true, serviceNumber, logEntry, responseData }
+      const serviceId = responseData?.data?.id || responseData?.id || null
+      const serviceNumber = responseData?.data?.service_number || responseData?.service_number || serviceId
+      return { success: true, serviceId, serviceNumber, logEntry, responseData }
     } else {
       logEntry.error = `HTTP ${response.status}: ${response.statusText}`
       return { success: false, error: logEntry.error, logEntry, responseData }
