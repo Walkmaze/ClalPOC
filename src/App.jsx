@@ -1,15 +1,19 @@
 import { useState, useCallback, useRef } from 'react'
-import Sidebar from './Sidebar'
-import DataTabs from './DataTabs'
-import FlowExecution from './FlowExecution'
-import AuditTrail from './AuditTrail'
-import { generateMemberData, generatePolicies, generateRegulations, FUND_TYPES, USE_CASES, getUseCaseLabel } from './dataGenerators'
+import ScenarioBuilder from './ScenarioBuilder'
+import ExecutionsList from './ExecutionsList'
+import ExecutionDetail from './ExecutionDetail'
+import { generateMemberData, generateContract, generateRegulations, FUND_TYPES, USE_CASES, getUseCaseLabel } from './dataGenerators'
 import { callClaude } from './claudeApi'
 import { executeValidation, determineOutcome } from './validationEngine'
 
 function formatTime() {
   const now = new Date()
   return now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+}
+
+function formatDateTime() {
+  const now = new Date()
+  return now.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
 const USE_CASE_LABELS = {
@@ -28,27 +32,44 @@ const USE_CASE_ICONS = {
   early_redemption: '⏰',
 }
 
+function calculateSlaDeadline(contract, isComplex) {
+  const clauses = contract?.clauses || []
+  const slaClause = clauses.find(c => c.clause_id === 'SLA-1')
+  const days = slaClause
+    ? (isComplex ? slaClause.sla_complex_business_days : slaClause.sla_business_days)
+    : 5
+  const deadline = new Date()
+  let added = 0
+  while (added < days) {
+    deadline.setDate(deadline.getDate() + 1)
+    const day = deadline.getDay()
+    if (day !== 5 && day !== 6) added++
+  }
+  return deadline.toISOString()
+}
+
+function determinePriority(memberData) {
+  const amount = memberData.withdrawal_amount || memberData.transfer_amount || memberData.redemption_amount || 0
+  if (amount > 100000) return 'High'
+  if (amount > 50000) return 'Medium'
+  return 'Low'
+}
+
 export default function App() {
+  const [activeTab, setActiveTab] = useState('executions')
+  const [selectedExecutionId, setSelectedExecutionId] = useState(null)
+
   const [fundType, setFundType] = useState('investment')
   const [useCase, setUseCase] = useState('withdrawal')
   const [memberData, setMemberData] = useState(null)
-  const [policies, setPolicies] = useState([])
+  const [contract, setContract] = useState(null)
   const [regulations, setRegulations] = useState([])
-
-  const [isRunning, setIsRunning] = useState(false)
-  const [analysisMessages, setAnalysisMessages] = useState(null)
-  const [validations, setValidations] = useState(null)
-  const [validationStatuses, setValidationStatuses] = useState([])
-  const [validationResults, setValidationResults] = useState([])
-  const [outcome, setOutcome] = useState(null)
-  const [auditEntries, setAuditEntries] = useState([])
-  const [processInfo, setProcessInfo] = useState(null)
-
-  const [runHistory, setRunHistory] = useState([])
-  const [error, setError] = useState(null)
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('flowmaze_api_key') || '')
+  const [isLaunching, setIsLaunching] = useState(false)
 
-  const abortRef = useRef(false)
+  const [executions, setExecutions] = useState([])
+  const abortRefs = useRef({})
+  const hitlResolvers = useRef({})
 
   const handleSetApiKey = useCallback((key) => {
     setApiKey(key)
@@ -57,120 +78,241 @@ export default function App() {
 
   const handleGenerate = useCallback(() => {
     const data = generateMemberData(fundType, useCase)
-    const pols = generatePolicies(fundType, useCase, data)
+    const ctr = generateContract(fundType, useCase, data)
     const regs = generateRegulations(useCase)
     setMemberData(data)
-    setPolicies(pols)
+    setContract(ctr)
     setRegulations(regs)
-    // Reset flow state
-    setAnalysisMessages(null)
-    setValidations(null)
-    setValidationStatuses([])
-    setValidationResults([])
-    setOutcome(null)
-    setAuditEntries([])
-    setProcessInfo(null)
-    setError(null)
   }, [fundType, useCase])
 
-  const delay = (ms) => new Promise(r => setTimeout(r, ms))
-
-  const addAuditEntry = useCallback((entry) => {
-    setAuditEntries(prev => [...prev, { ...entry, timestamp: formatTime() }])
+  const updateExecution = useCallback((id, updates) => {
+    setExecutions(prev => prev.map(ex => ex.id === id ? { ...ex, ...updates } : ex))
   }, [])
 
-  const handleRunFlow = useCallback(async () => {
-    if (!memberData) return
-    abortRef.current = false
-    setIsRunning(true)
-    setError(null)
-    setOutcome(null)
-    setValidations(null)
-    setValidationStatuses([])
-    setValidationResults([])
-    setAuditEntries([])
+  const runFlowForExecution = useCallback(async (execId, execMemberData, execContract, execRegulations) => {
+    const delay = (ms) => new Promise(r => setTimeout(r, ms))
 
-    const currentUseCase = memberData.use_case || useCase
+    const addAudit = (entry) => {
+      setExecutions(prev => prev.map(ex =>
+        ex.id === execId
+          ? { ...ex, auditEntries: [...ex.auditEntries, { ...entry, timestamp: formatTime() }] }
+          : ex
+      ))
+    }
+
+    const currentUseCase = execMemberData.use_case || 'withdrawal'
     const ucLabel = USE_CASE_LABELS[currentUseCase] || 'request'
     const ucIcon = USE_CASE_ICONS[currentUseCase] || '📋'
 
-    const procId = `PROC-${String(Math.floor(Math.random() * 100000)).padStart(5, '0')}`
-    const fundLabel = FUND_TYPES.find(f => f.id === fundType)
-    setProcessInfo({
-      processId: procId,
-      memberId: memberData.member_id,
-      memberName: memberData.member_name,
-      fundType: `${fundLabel?.labelHe} — ${fundLabel?.label}`,
-      useCase: getUseCaseLabel(fundType, currentUseCase),
-      status: 'RUNNING',
-    })
-
-    // Phase 1: Analysis animation
     const messages = [
-      { icon: '⏳', text: `Receiving ${ucLabel} for ${memberData.member_name}...` },
+      { icon: '⏳', text: `Receiving ${ucLabel} for ${execMemberData.member_name}...` },
       { icon: '📋', text: `Analyzing member profile and fund data...` },
-      { icon: '📜', text: `Reading ${policies.length} insurance policy clauses...` },
-      { icon: '⚖️', text: `Checking ${regulations.length} regulatory requirements...` },
+      { icon: '📜', text: `Reading ${execContract.clauses.length} customer contract clauses...` },
+      { icon: '⚖️', text: `Checking ${execRegulations.length} regulatory requirements...` },
       { icon: '🧠', text: `Determining required validation steps for ${ucLabel}...` },
     ]
 
-    setAnalysisMessages([])
-    addAuditEntry({ action: 'Request intake', category: 'system', source: '—', result: 'SUCCESS', details: `${ucIcon} ${ucLabel} — Process ${procId} initiated` })
+    updateExecution(execId, { analysisMessages: [] })
+    addAudit({ action: 'Request intake', category: 'system', source: '—', result: 'SUCCESS', details: `${ucIcon} ${ucLabel} — Process initiated` })
 
     for (let i = 0; i < messages.length; i++) {
-      if (abortRef.current) return
+      if (abortRefs.current[execId]) return
       await delay(800)
-      setAnalysisMessages(prev => [...prev, { ...messages[i], done: true }])
+      setExecutions(prev => prev.map(ex =>
+        ex.id === execId
+          ? { ...ex, analysisMessages: [...(ex.analysisMessages || []), { ...messages[i], done: true }] }
+          : ex
+      ))
     }
 
-    addAuditEntry({ action: 'Policy analysis', category: 'ai', source: '—', result: 'SUCCESS', details: `${policies.length} policies analyzed` })
-    addAuditEntry({ action: 'Regulation check', category: 'ai', source: '—', result: 'SUCCESS', details: `${regulations.length} regulations checked` })
+    addAudit({ action: 'Contract analysis', category: 'ai', source: '—', result: 'SUCCESS', details: `${execContract.clauses.length} contract clauses analyzed` })
+    addAudit({ action: 'Regulation check', category: 'ai', source: '—', result: 'SUCCESS', details: `${execRegulations.length} regulations checked` })
 
-    // Phase 2: Claude API call
     let validationArray
     try {
-      validationArray = await callClaude(memberData, policies, regulations, apiKey)
+      validationArray = await callClaude(execMemberData, execContract, execRegulations, apiKey)
     } catch (err) {
-      setError(`API Error: ${err.message}`)
-      setIsRunning(false)
-      setProcessInfo(prev => ({ ...prev, status: 'ERROR' }))
+      updateExecution(execId, { error: `API Error: ${err.message}`, status: 'ERROR' })
       return
     }
 
     if (!Array.isArray(validationArray) || validationArray.length === 0) {
-      setError('Claude returned an invalid response. Please try again.')
-      setIsRunning(false)
-      setProcessInfo(prev => ({ ...prev, status: 'ERROR' }))
+      updateExecution(execId, { error: 'Claude returned an invalid response.', status: 'ERROR' })
       return
     }
 
-    // Show completion message
     await delay(500)
-    setAnalysisMessages(prev => [...prev, { icon: '✅', text: `Flow generated: ${validationArray.length} validation steps identified`, done: true }])
-    addAuditEntry({ action: 'Flow generation', category: 'ai', source: '—', result: 'SUCCESS', details: `${validationArray.length} validations generated` })
+    setExecutions(prev => prev.map(ex =>
+      ex.id === execId
+        ? { ...ex, analysisMessages: [...(ex.analysisMessages || []), { icon: '✅', text: `Flow generated: ${validationArray.length} validation steps identified`, done: true }] }
+        : ex
+    ))
+    addAudit({ action: 'Flow generation', category: 'ai', source: '—', result: 'SUCCESS', details: `${validationArray.length} validations generated` })
 
-    // Phase 3: Render all cards as pending, then execute
-    setValidations(validationArray)
-    setValidationStatuses(validationArray.map(() => 'pending'))
-    setValidationResults(validationArray.map(() => null))
+    updateExecution(execId, {
+      validations: validationArray,
+      validationStatuses: validationArray.map(() => 'pending'),
+      validationResults: validationArray.map(() => null),
+    })
 
     await delay(600)
 
     const results = []
     for (let i = 0; i < validationArray.length; i++) {
-      if (abortRef.current) return
+      if (abortRefs.current[execId]) return
 
-      setValidationStatuses(prev => prev.map((s, j) => j === i ? 'executing' : s))
+      // Check if this is a HITL node
+      if (validationArray[i].requires_hitl) {
+        // Set to hitl_waiting state
+        setExecutions(prev => prev.map(ex =>
+          ex.id === execId
+            ? {
+                ...ex,
+                status: 'PENDING_APPROVAL',
+                validationStatuses: ex.validationStatuses.map((s, j) => j === i ? 'hitl_waiting' : s),
+              }
+            : ex
+        ))
+
+        addAudit({
+          action: validationArray[i].name,
+          category: 'hitl',
+          source: validationArray[i].source || '—',
+          result: 'PAUSED',
+          details: `Waiting for human review: ${validationArray[i].hitl_reason || 'Manual review required'}`,
+        })
+
+        // Wait for HITL resolution
+        const hitlResult = await new Promise(resolve => {
+          hitlResolvers.current[execId] = { resolve, validationIndex: i }
+        })
+
+        delete hitlResolvers.current[execId]
+        if (abortRefs.current[execId]) return
+
+        // Process HITL result
+        if (hitlResult.decision === 'approve') {
+          const result = { passed: true, actual_value: 'Human approved', message: 'Approved by human reviewer' }
+          results.push(result)
+          setExecutions(prev => prev.map(ex =>
+            ex.id === execId
+              ? {
+                  ...ex,
+                  status: 'RUNNING',
+                  validationStatuses: ex.validationStatuses.map((s, j) => j === i ? 'pass' : s),
+                  validationResults: ex.validationResults.map((r, j) => j === i ? result : r),
+                }
+              : ex
+          ))
+          addAudit({
+            action: validationArray[i].name,
+            category: 'hitl',
+            source: validationArray[i].source || '—',
+            result: 'RESOLVED',
+            details: 'Human approved, flow continues',
+          })
+        } else if (hitlResult.decision === 'reject') {
+          const result = { passed: false, actual_value: 'Human rejected', message: 'Rejected by human reviewer' }
+          results.push(result)
+          setExecutions(prev => prev.map(ex =>
+            ex.id === execId
+              ? {
+                  ...ex,
+                  status: 'RUNNING',
+                  validationStatuses: ex.validationStatuses.map((s, j) => j === i ? 'fail' : s),
+                  validationResults: ex.validationResults.map((r, j) => j === i ? result : r),
+                }
+              : ex
+          ))
+          addAudit({
+            action: validationArray[i].name,
+            category: 'hitl',
+            source: validationArray[i].source || '—',
+            result: 'REJECTED',
+            details: 'Human rejected, flow terminated',
+          })
+          // End the flow on rejection
+          await delay(400)
+          updateExecution(execId, {
+            outcome: { type: 'blocked', message: `${validationArray[i].name}: Rejected by human reviewer` },
+            status: 'REJECTED',
+          })
+          addAudit({
+            action: 'Outcome determination',
+            category: 'system',
+            source: '—',
+            result: 'FAIL',
+            details: 'Flow terminated by human rejection',
+          })
+          return
+        } else {
+          // Escalate — mark as warning, continue
+          const result = { passed: true, actual_value: 'Escalated', message: 'Escalated for further review, flow continues' }
+          results.push(result)
+          setExecutions(prev => prev.map(ex =>
+            ex.id === execId
+              ? {
+                  ...ex,
+                  status: 'RUNNING',
+                  validationStatuses: ex.validationStatuses.map((s, j) => j === i ? 'warning' : s),
+                  validationResults: ex.validationResults.map((r, j) => j === i ? result : r),
+                }
+              : ex
+          ))
+          addAudit({
+            action: validationArray[i].name,
+            category: 'hitl',
+            source: validationArray[i].source || '—',
+            result: 'ESCALATED',
+            details: 'Escalated for further review, flow continues',
+          })
+        }
+
+        // Log HITL step details
+        if (hitlResult.stepData) {
+          const steps = validationArray[i].hitl_steps || []
+          for (let s = 0; s < steps.length; s++) {
+            const data = hitlResult.stepData[s]
+            if (data) {
+              const summary = Object.entries(data).map(([k, v]) => `${k}: ${v}`).join(', ')
+              addAudit({
+                action: `HITL Step ${s + 1}: ${steps[s].title}`,
+                category: 'hitl',
+                source: validationArray[i].source || '—',
+                result: 'COMPLETED',
+                details: summary,
+              })
+            }
+          }
+        }
+
+        await delay(400)
+        continue
+      }
+
+      // Normal (non-HITL) validation
+      setExecutions(prev => prev.map(ex =>
+        ex.id === execId
+          ? { ...ex, validationStatuses: ex.validationStatuses.map((s, j) => j === i ? 'executing' : s) }
+          : ex
+      ))
       await delay(600)
 
-      const result = executeValidation(validationArray[i], memberData)
+      const result = executeValidation(validationArray[i], execMemberData)
       results.push(result)
 
       const status = result.passed ? 'pass' : (validationArray[i].severity === 'warning' ? 'warning' : 'fail')
-      setValidationStatuses(prev => prev.map((s, j) => j === i ? status : s))
-      setValidationResults(prev => prev.map((r, j) => j === i ? result : r))
+      setExecutions(prev => prev.map(ex =>
+        ex.id === execId
+          ? {
+              ...ex,
+              validationStatuses: ex.validationStatuses.map((s, j) => j === i ? status : s),
+              validationResults: ex.validationResults.map((r, j) => j === i ? result : r),
+            }
+          : ex
+      ))
 
-      addAuditEntry({
+      addAudit({
         action: validationArray[i].name,
         category: validationArray[i].category,
         source: validationArray[i].source || '—',
@@ -179,159 +321,226 @@ export default function App() {
       })
     }
 
-    // Phase 4: Determine outcome
     await delay(400)
-    const finalOutcome = determineOutcome(validationArray, results, memberData)
-    setOutcome(finalOutcome)
-    setProcessInfo(prev => ({
-      ...prev,
-      status: finalOutcome.type === 'approved' ? 'COMPLETED'
-        : finalOutcome.type === 'blocked' ? 'BLOCKED'
-        : finalOutcome.type === 'customer_action' ? 'AWAITING_DOCUMENTS'
-        : finalOutcome.type === 'tax_consent' ? 'AWAITING_CONSENT'
-        : 'PENDING',
-    }))
+    const finalOutcome = determineOutcome(validationArray, results, execMemberData)
 
-    addAuditEntry({
+    const finalStatus = finalOutcome.type === 'approved' ? 'COMPLETED'
+      : finalOutcome.type === 'blocked' ? 'BLOCKED'
+      : finalOutcome.type === 'customer_action' ? 'AWAITING_DOCUMENTS'
+      : finalOutcome.type === 'tax_consent' ? 'AWAITING_CONSENT'
+      : finalOutcome.type === 'approval' ? 'PENDING_APPROVAL'
+      : 'COMPLETED'
+
+    const isComplex = finalOutcome.type === 'approval' || finalOutcome.type === 'tax_consent'
+    const newSla = isComplex ? calculateSlaDeadline(execContract, true) : undefined
+
+    updateExecution(execId, {
+      outcome: finalOutcome,
+      status: finalStatus,
+      ...(newSla ? { slaDeadline: newSla } : {}),
+    })
+
+    addAudit({
       action: 'Outcome determination',
       category: 'system',
       source: '—',
       result: finalOutcome.type === 'approved' ? 'SUCCESS' : finalOutcome.type === 'blocked' ? 'FAIL' : 'WARNING',
       details: finalOutcome.message,
     })
+  }, [apiKey, updateExecution])
 
-    // Add to run history
-    setRunHistory(prev => [{
-      fundType,
-      useCase: currentUseCase,
+  const handleLaunch = useCallback(() => {
+    if (!memberData || !apiKey || !contract) return
+    setIsLaunching(true)
+
+    const currentUseCase = memberData.use_case || useCase
+    const procId = `PROC-${String(Math.floor(Math.random() * 100000)).padStart(5, '0')}`
+    const fundLabel = FUND_TYPES.find(f => f.id === fundType)
+    const priority = determinePriority(memberData)
+    const slaDeadline = calculateSlaDeadline(contract, false)
+
+    const execContract = { ...contract, clauses: [...contract.clauses] }
+
+    const newExecution = {
+      id: procId,
+      processId: procId,
+      timestamp: new Date().toISOString(),
+      timestampDisplay: formatDateTime(),
       memberName: memberData.member_name,
-      outcomeType: finalOutcome.type,
-      timestamp: formatTime(),
-      snapshot: {
-        memberData: { ...memberData },
-        policies: [...policies],
-        regulations: [...regulations],
-        validations: validationArray,
-        results,
-        outcome: finalOutcome,
-      },
-    }, ...prev].slice(0, 10))
+      fundType,
+      fundTypeLabel: fundLabel ? `${fundLabel.labelHe} — ${fundLabel.label}` : fundType,
+      useCase: currentUseCase,
+      useCaseLabel: getUseCaseLabel(fundType, currentUseCase),
+      priority,
+      slaDeadline,
+      status: 'RUNNING',
+      memberData: { ...memberData },
+      contract: execContract,
+      regulations: [...regulations],
+      analysisMessages: null,
+      validations: null,
+      validationStatuses: [],
+      validationResults: [],
+      outcome: null,
+      auditEntries: [],
+      error: null,
+    }
 
-    setIsRunning(false)
-  }, [memberData, policies, regulations, fundType, useCase, apiKey, addAuditEntry])
+    setExecutions(prev => [newExecution, ...prev])
+    setSelectedExecutionId(procId)
+    setActiveTab('executions')
+    setIsLaunching(false)
+
+    abortRefs.current[procId] = false
+    runFlowForExecution(procId, { ...memberData }, execContract, [...regulations])
+  }, [memberData, contract, regulations, fundType, useCase, apiKey, runFlowForExecution])
 
   const handleApprove = useCallback(() => {
-    const currentUseCase = memberData?.use_case || useCase
-    const ucLabel = USE_CASE_LABELS[currentUseCase] || 'request'
-    setOutcome(prev => ({
-      ...prev,
-      type: 'approved',
-      message: prev.type === 'tax_consent'
-        ? `Early ${currentUseCase === 'early_redemption' ? 'redemption' : 'withdrawal'} approved with tax deductions. Net amount: ₪${prev.breakdown.net.toLocaleString()}`
-        : `${ucLabel.charAt(0).toUpperCase() + ucLabel.slice(1)} approved by supervisor`,
-    }))
-    setProcessInfo(prev => ({ ...prev, status: 'COMPLETED' }))
-    addAuditEntry({ action: 'Manual approval', category: 'system', source: 'supervisor', result: 'SUCCESS', details: `${ucLabel} approved` })
-  }, [memberData, useCase, addAuditEntry])
+    if (!selectedExecutionId) return
+    const exec = executions.find(e => e.id === selectedExecutionId)
+    if (!exec) return
+
+    const ucLabel = USE_CASE_LABELS[exec.useCase] || 'request'
+    const newOutcome = exec.outcome?.type === 'tax_consent'
+      ? {
+          ...exec.outcome,
+          type: 'approved',
+          message: `Early ${exec.useCase === 'early_redemption' ? 'redemption' : 'withdrawal'} approved with tax deductions. Net amount: ₪${exec.outcome.breakdown?.net?.toLocaleString()}`,
+        }
+      : {
+          ...exec.outcome,
+          type: 'approved',
+          message: `${ucLabel.charAt(0).toUpperCase() + ucLabel.slice(1)} approved by supervisor`,
+        }
+
+    updateExecution(selectedExecutionId, {
+      outcome: newOutcome,
+      status: 'COMPLETED',
+      auditEntries: [...exec.auditEntries, {
+        action: 'Manual approval',
+        category: 'system',
+        source: 'supervisor',
+        result: 'SUCCESS',
+        details: `${ucLabel} approved`,
+        timestamp: formatTime(),
+      }],
+    })
+  }, [selectedExecutionId, executions, updateExecution])
 
   const handleReject = useCallback(() => {
-    const currentUseCase = memberData?.use_case || useCase
-    const ucLabel = USE_CASE_LABELS[currentUseCase] || 'request'
-    setOutcome(prev => ({ ...prev, type: 'blocked', message: `${ucLabel.charAt(0).toUpperCase() + ucLabel.slice(1)} rejected by supervisor` }))
-    setProcessInfo(prev => ({ ...prev, status: 'REJECTED' }))
-    addAuditEntry({ action: 'Manual rejection', category: 'system', source: 'supervisor', result: 'FAIL', details: `${ucLabel} rejected` })
-  }, [memberData, useCase, addAuditEntry])
+    if (!selectedExecutionId) return
+    const exec = executions.find(e => e.id === selectedExecutionId)
+    if (!exec) return
 
-  const handleSelectRun = useCallback((run) => {
-    const { snapshot } = run
-    setMemberData(snapshot.memberData)
-    setPolicies(snapshot.policies)
-    setRegulations(snapshot.regulations)
-    setFundType(run.fundType)
-    setUseCase(run.useCase || 'withdrawal')
-    setValidations(snapshot.validations)
-    setValidationStatuses(snapshot.validations.map((_, i) => snapshot.results[i].passed ? 'pass' : 'fail'))
-    setValidationResults(snapshot.results)
-    setOutcome(snapshot.outcome)
-    setAnalysisMessages([
-      { icon: '✅', text: `Replaying flow: ${snapshot.validations.length} validation steps`, done: true },
-    ])
+    const ucLabel = USE_CASE_LABELS[exec.useCase] || 'request'
+    updateExecution(selectedExecutionId, {
+      outcome: { ...exec.outcome, type: 'blocked', message: `${ucLabel.charAt(0).toUpperCase() + ucLabel.slice(1)} rejected by supervisor` },
+      status: 'REJECTED',
+      auditEntries: [...exec.auditEntries, {
+        action: 'Manual rejection',
+        category: 'system',
+        source: 'supervisor',
+        result: 'FAIL',
+        details: `${ucLabel} rejected`,
+        timestamp: formatTime(),
+      }],
+    })
+  }, [selectedExecutionId, executions, updateExecution])
+
+  const handleHitlResolve = useCallback((executionId, validationIndex, decision, stepData) => {
+    const resolver = hitlResolvers.current[executionId]
+    if (resolver) {
+      resolver.resolve({ decision, stepData })
+    }
   }, [])
 
-  const currentUseCases = USE_CASES[fundType] || []
-  const currentUcInfo = currentUseCases.find(uc => uc.id === useCase)
+  const selectedExecution = executions.find(e => e.id === selectedExecutionId)
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar
-        fundType={fundType}
-        setFundType={setFundType}
-        useCase={useCase}
-        setUseCase={setUseCase}
-        onGenerate={handleGenerate}
-        onRunFlow={handleRunFlow}
-        isRunning={isRunning}
-        runHistory={runHistory}
-        onSelectRun={handleSelectRun}
-        hasData={!!memberData}
-        apiKey={apiKey}
-        setApiKey={handleSetApiKey}
-      />
-
-      <main className="flex-1 p-6 overflow-y-auto max-h-screen">
-        {/* Header */}
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-text-primary">Insurance Automation POC</h2>
-          <p className="text-sm text-text-muted mt-1">
-            AI-driven real-time validation engine for fund operations
-            {currentUcInfo && (
-              <span className="ml-2 text-accent">
-                — {currentUcInfo.icon} {currentUcInfo.label}
-              </span>
-            )}
-          </p>
+    <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="bg-bg-card border-b border-border px-6 py-0 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-8">
+          <h1 className="text-lg font-bold text-accent tracking-wide py-3">
+            <span className="text-text-primary">flow</span>maze
+          </h1>
+          <nav className="flex">
+            <button
+              onClick={() => { setActiveTab('executions'); setSelectedExecutionId(null) }}
+              className={`px-4 py-3.5 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'executions'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-text-muted hover:text-text-primary'
+              }`}
+            >
+              Executions
+              {executions.length > 0 && (
+                <span className="ml-2 text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full">
+                  {executions.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('builder')}
+              className={`px-4 py-3.5 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'builder'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-text-muted hover:text-text-primary'
+              }`}
+            >
+              Scenario Builder
+            </button>
+          </nav>
         </div>
+        <p className="text-[10px] text-text-muted">Insurance Back-Office Automation</p>
+      </header>
 
-        {/* Data Tabs */}
-        <DataTabs
-          memberData={memberData}
-          setMemberData={setMemberData}
-          policies={policies}
-          setPolicies={setPolicies}
-          regulations={regulations}
-          setRegulations={setRegulations}
-        />
-
-        {/* Error */}
-        {error && (
-          <div className="mt-4 bg-error/10 border border-error rounded-lg p-4 text-sm text-error">
-            {error}
-          </div>
+      {/* Content */}
+      <main className="flex-1 p-6 overflow-y-auto">
+        {activeTab === 'builder' && (
+          <ScenarioBuilder
+            fundType={fundType}
+            setFundType={setFundType}
+            useCase={useCase}
+            setUseCase={setUseCase}
+            memberData={memberData}
+            setMemberData={setMemberData}
+            contract={contract}
+            setContract={setContract}
+            regulations={regulations}
+            setRegulations={setRegulations}
+            onGenerate={handleGenerate}
+            onLaunch={handleLaunch}
+            isRunning={isLaunching}
+            apiKey={apiKey}
+            setApiKey={handleSetApiKey}
+          />
         )}
 
-        {/* Flow Execution */}
-        <div className="mt-4">
-          <FlowExecution
-            analysisMessages={analysisMessages}
-            validations={validations}
-            validationStatuses={validationStatuses}
-            validationResults={validationResults}
-            outcome={outcome}
+        {activeTab === 'executions' && !selectedExecutionId && (
+          <ExecutionsList
+            executions={executions}
+            onSelect={(id) => setSelectedExecutionId(id)}
+            onGoToBuilder={() => setActiveTab('builder')}
+          />
+        )}
+
+        {activeTab === 'executions' && selectedExecutionId && selectedExecution && (
+          <ExecutionDetail
+            execution={selectedExecution}
             onApprove={handleApprove}
             onReject={handleReject}
-            useCase={memberData?.use_case || useCase}
-            memberData={memberData}
+            onBack={() => setSelectedExecutionId(null)}
+            onHitlResolve={handleHitlResolve}
           />
-        </div>
-
-        {/* Audit Trail */}
-        <AuditTrail entries={auditEntries} processInfo={processInfo} />
-
-        {/* Footer */}
-        <footer className="mt-8 py-4 border-t border-border text-center">
-          <p className="text-xs text-text-muted">Flowmaze by Walkmaze — AI-Driven Insurance Back-Office Automation</p>
-        </footer>
+        )}
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border py-3 text-center shrink-0">
+        <p className="text-[10px] text-text-muted">Flowmaze by Walkmaze — AI-Driven Insurance Back-Office Automation</p>
+      </footer>
     </div>
   )
 }
+

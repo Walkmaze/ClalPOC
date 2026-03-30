@@ -6,7 +6,7 @@ const CATEGORY_COLORS = {
   eligibility: 'bg-blue-500/20 text-blue-300',
   financial: 'bg-emerald-500/20 text-emerald-300',
   regulatory: 'bg-orange-500/20 text-orange-300',
-  policy: 'bg-cyan-500/20 text-cyan-300',
+  contract: 'bg-cyan-500/20 text-cyan-300',
 }
 
 const SEVERITY_ICONS = {
@@ -19,12 +19,14 @@ function Spinner() {
   return <span className="inline-block w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
 }
 
-function ValidationCard({ validation, status, result, index }) {
+function ValidationCard({ validation, status, result, index, onHitlClick }) {
   const isPending = status === 'pending'
   const isExecuting = status === 'executing'
+  const isHitlWaiting = status === 'hitl_waiting'
   const isDone = status === 'pass' || status === 'fail' || status === 'warning'
 
-  const borderColor = isExecuting ? 'border-accent animate-pulse-glow'
+  const borderColor = isHitlWaiting ? 'border-warning animate-pulse-glow'
+    : isExecuting ? 'border-accent animate-pulse-glow'
     : status === 'pass' ? 'border-success'
     : status === 'fail' ? 'border-error'
     : status === 'warning' ? 'border-warning'
@@ -34,17 +36,26 @@ function ValidationCard({ validation, status, result, index }) {
 
   return (
     <div
-      className={`bg-bg-primary rounded-lg border-2 ${borderColor} ${opacity} p-4 transition-all duration-300`}
+      className={`bg-bg-primary rounded-lg border-2 ${borderColor} ${opacity} p-4 transition-all duration-300 ${isHitlWaiting ? 'cursor-pointer' : ''}`}
       style={{ animationDelay: `${index * 50}ms` }}
+      onClick={isHitlWaiting ? () => onHitlClick?.(index) : undefined}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <span className="text-xs">{SEVERITY_ICONS[validation.severity] || 'ℹ️'}</span>
+          {isHitlWaiting ? (
+            <span className="text-xs">👤</span>
+          ) : (
+            <span className="text-xs">{SEVERITY_ICONS[validation.severity] || 'ℹ️'}</span>
+          )}
           <h4 className="text-sm font-semibold text-text-primary truncate">{validation.name}</h4>
+          {validation.requires_hitl && (
+            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-warning/20 text-warning font-medium shrink-0">HITL</span>
+          )}
         </div>
         <div className="flex items-center gap-1.5 ml-2 shrink-0">
           {isExecuting && <Spinner />}
+          {isHitlWaiting && <span className="text-warning text-lg">👤</span>}
           {status === 'pass' && <span className="text-success text-lg">✓</span>}
           {status === 'fail' && <span className="text-error text-lg">✗</span>}
           {status === 'warning' && <span className="text-warning text-lg">⚠</span>}
@@ -64,8 +75,21 @@ function ValidationCard({ validation, status, result, index }) {
       {/* Description */}
       <p className="text-xs text-text-muted mb-2">{validation.description}</p>
 
+      {/* HITL waiting state */}
+      {isHitlWaiting && (
+        <div className="mt-2 pt-2 border-t border-warning/30">
+          <p className="text-xs text-warning font-semibold mb-1">Requires Human Review</p>
+          {validation.hitl_reason && (
+            <p className="text-[10px] text-text-muted mb-2">{validation.hitl_reason}</p>
+          )}
+          <div className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-warning bg-warning/10 px-2.5 py-1 rounded-full animate-pulse">
+            <span>👤</span> Click to review
+          </div>
+        </div>
+      )}
+
       {/* Rule */}
-      {validation.rule && (
+      {!isHitlWaiting && validation.rule && (
         <div className="text-[10px] font-mono text-text-muted bg-bg-card rounded px-2 py-1 mb-2">
           Rule: {validation.rule}
         </div>
@@ -455,7 +479,7 @@ function AnalysisMessages({ messages }) {
   )
 }
 
-export default function FlowExecution({ analysisMessages, validations, validationStatuses, validationResults, outcome, onApprove, onReject, useCase, memberData }) {
+export default function FlowExecution({ analysisMessages, validations, validationStatuses, validationResults, outcome, onApprove, onReject, useCase, memberData, onHitlCardClick }) {
   const [viewMode, setViewMode] = useState('cards') // 'cards' or 'diagram'
 
   if (!analysisMessages && !validations) {
@@ -518,6 +542,7 @@ export default function FlowExecution({ analysisMessages, validations, validatio
               status={validationStatuses?.[i] || 'pending'}
               result={validationResults?.[i]}
               index={i}
+              onHitlClick={onHitlCardClick}
             />
           ))}
         </div>
@@ -532,6 +557,7 @@ export default function FlowExecution({ analysisMessages, validations, validatio
             validationResults={validationResults}
             outcome={outcome}
             memberData={memberData}
+            onHitlNodeClick={onHitlCardClick}
           />
         </div>
       )}

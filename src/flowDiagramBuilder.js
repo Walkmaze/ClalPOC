@@ -131,7 +131,7 @@ const EDGE_LABEL_COLOR = '#8AABAD'
  * Build the flow diagram — ALL validations run through to the end (no stopping on failure).
  * The flow mirrors the cards view: every validation executes regardless of prior failures.
  */
-export function buildFlowDiagram(validations, memberData, outcome, onNodeClick) {
+export function buildFlowDiagram(validations, memberData, outcome, onNodeClick, onHitlClick) {
   const nodes = []
   const edges = []
 
@@ -208,6 +208,9 @@ export function buildFlowDiagram(validations, memberData, outcome, onNodeClick) 
         status: valStatus,
         nodeType: isApi ? 'webservice' : 'custom',
         onNodeClick,
+        onHitlClick,
+        requires_hitl: val.requires_hitl,
+        validationIndex: val._index,
         validation: val,
         result: valResult,
         endpoint: isApi ? getWsEndpoint(val) : undefined,

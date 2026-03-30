@@ -31,6 +31,7 @@ function getNodeColor(node) {
   if (status === 'pass') return '#4ADE80'
   if (status === 'fail') return '#F87171'
   if (status === 'warning') return '#FBBF24'
+  if (status === 'hitl_waiting') return '#FBBF24'
   if (status === 'executing') return '#70E6E8'
   if (node.type === 'webservice') return '#2E6BA6'
   if (node.type === 'splitter') return '#FBBF24'
@@ -44,14 +45,20 @@ export default function FlowDiagram({
   validationResults,
   outcome,
   memberData,
+  onHitlNodeClick,
 }) {
   const [selectedNode, setSelectedNode] = useState(null)
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const [edges, setEdges, onEdgesChange] = useEdgesState([])
 
   const onNodeClick = useCallback((nodeData) => {
+    // If it's a HITL node waiting, trigger HITL panel instead
+    if (nodeData.status === 'hitl_waiting' && onHitlNodeClick) {
+      onHitlNodeClick(nodeData.validationIndex)
+      return
+    }
     setSelectedNode(nodeData)
-  }, [])
+  }, [onHitlNodeClick])
 
   // Build initial diagram when validations arrive
   useEffect(() => {
@@ -66,19 +73,23 @@ export default function FlowDiagram({
       ...v,
       _status: validationStatuses?.[i] || 'pending',
       _result: validationResults?.[i] || null,
+      _index: i,
     }))
 
-    const showOutcome = validationStatuses?.every(s => s === 'pass' || s === 'fail' || s === 'warning')
+    const showOutcome = validationStatuses?.every(s => ['pass', 'fail', 'warning', 'hitl_waiting'].includes(s)) === false
+      ? false
+      : validationStatuses?.every(s => s === 'pass' || s === 'fail' || s === 'warning')
     const { nodes: newNodes, edges: newEdges } = buildFlowDiagram(
       enrichedValidations,
       memberData,
       showOutcome ? outcome : null,
       onNodeClick,
+      onHitlNodeClick,
     )
 
     setNodes(newNodes)
     setEdges(newEdges)
-  }, [validations, validationStatuses, validationResults, outcome, memberData, onNodeClick, setNodes, setEdges])
+  }, [validations, validationStatuses, validationResults, outcome, memberData, onNodeClick, onHitlNodeClick, setNodes, setEdges])
 
   const onPaneClick = useCallback(() => {
     setSelectedNode(null)
@@ -156,6 +167,7 @@ export default function FlowDiagram({
         <LegendItem color="#1FC2B8" shape="circle" label="Node" />
         <LegendItem color="#2E6BA6" shape="circle" label="Web Services" />
         <LegendItem color="#FBBF24" shape="circle" label="Splitter" />
+        <LegendItem color="#FBBF24" shape="dot" label="HITL" />
         <LegendItem color="#4ADE80" shape="dot" label="Pass" />
         <LegendItem color="#F87171" shape="dot" label="Fail" />
       </div>

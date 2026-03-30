@@ -15,6 +15,7 @@ const STATUS_RING = {
   pass: { border: '#4ADE80', opacity: 1 },
   fail: { border: '#F87171', opacity: 1 },
   warning: { border: '#FBBF24', opacity: 1 },
+  hitl_waiting: { border: '#FBBF24', opacity: 1 },
   skipped: { border: '#38595A', opacity: 0.3 },
   inactive: { border: '#38595A', opacity: 0.3 },
 }
@@ -77,11 +78,13 @@ function StatusDot({ status }) {
     pass: '#4ADE80',
     fail: '#F87171',
     warning: '#FBBF24',
+    hitl_waiting: '#FBBF24',
   }
   const icons = {
     pass: '✓',
     fail: '✗',
     warning: '⚠',
+    hitl_waiting: '👤',
   }
   const color = colors[status] || '#8AABAD'
 
@@ -164,33 +167,43 @@ export function StartEndNode({ data }) {
 // ─── Custom Node (Processing / Validation) ──────────────────────
 export function CustomNode({ data }) {
   const status = data.status || 'pending'
+  const isHitl = data.requires_hitl
+  const isHitlWaiting = status === 'hitl_waiting'
   const ring = STATUS_RING[status] || STATUS_RING.pending
   const tc = TYPE_COLORS.custom
   const isActive = status !== 'pending' && status !== 'inactive' && status !== 'skipped'
   const borderColor = isActive ? ring.border : tc.border
   const borderOpacity = ring.opacity
 
+  const handleClick = () => {
+    if (isHitlWaiting && data.onHitlClick) {
+      data.onHitlClick(data.validationIndex)
+    } else if (data.onNodeClick) {
+      data.onNodeClick(data)
+    }
+  }
+
   return (
     <div
-      onClick={() => data.onNodeClick?.(data)}
+      onClick={handleClick}
       style={{
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: 6,
-        cursor: data.onNodeClick ? 'pointer' : 'default',
+        cursor: (data.onNodeClick || isHitlWaiting) ? 'pointer' : 'default',
         opacity: borderOpacity,
       }}
     >
       {/* Circle */}
       <div
-        className={status === 'executing' ? 'flow-node-executing' : ''}
+        className={status === 'executing' ? 'flow-node-executing' : isHitlWaiting ? 'flow-node-executing' : ''}
         style={{
           position: 'relative',
           width: 52,
           height: 52,
           borderRadius: '50%',
-          background: tc.bg,
+          background: isHitlWaiting ? '#1A1A0D' : tc.bg,
           border: `2.5px solid ${borderColor}`,
           display: 'flex',
           alignItems: 'center',
@@ -201,12 +214,16 @@ export function CustomNode({ data }) {
       >
         <Handle type="target" position={Position.Left} style={{ ...handleStyle, background: borderColor }} />
         <Handle type="source" position={Position.Right} style={{ ...handleStyle, background: borderColor }} />
-        <NodeIcon type="custom" color={isActive ? borderColor : tc.icon} />
+        {isHitl ? (
+          <span style={{ fontSize: '20px' }}>👤</span>
+        ) : (
+          <NodeIcon type="custom" color={isActive ? borderColor : tc.icon} />
+        )}
         <StatusDot status={status} />
       </div>
       {/* Type label */}
-      <div style={{ fontSize: '9px', fontWeight: 700, color: tc.icon, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        {tc.label}
+      <div style={{ fontSize: '9px', fontWeight: 700, color: isHitl ? '#FBBF24' : tc.icon, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        {isHitl ? 'HITL' : tc.label}
       </div>
       {/* Name */}
       <div style={{

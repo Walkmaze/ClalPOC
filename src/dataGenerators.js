@@ -268,13 +268,16 @@ export function generateMemberData(fundType, useCase) {
   return { ...base, withdrawal_amount: Math.round(totalBalance * withdrawalPct) }
 }
 
-// --- POLICIES ---
+// --- CONTRACT CLAUSES ---
 
-const INVESTMENT_WITHDRAWAL_POLICIES = [
+const INSURANCE_COMPANIES = ['Menora Mivtachim', 'Migdal Insurance', 'Harel Insurance', 'The Phoenix', 'Clal Insurance', 'Altshuler Shaham', 'Psagot Provident', 'More Investment House']
+
+const INVESTMENT_WITHDRAWAL_CLAUSES = [
   () => ({
     clause_id: 'CL-1.1',
+    category: 'processing',
     title: 'Bank Account Ownership Validation',
-    description: 'Destination bank account must be owned by the requesting member. External API verification required.',
+    description: 'Destination bank account must be verified and match member records.',
     conditions: [{ field: 'account_owner', operator: '==', value: 'member_name' }],
     consequence: 'block',
   }),
@@ -282,57 +285,76 @@ const INVESTMENT_WITHDRAWAL_POLICIES = [
     const months = data.policy_minimum_holding_months || pick([6, 12, 18, 24])
     return {
       clause_id: 'CL-4.3',
+      category: 'eligibility',
       title: 'Minimum Holding Period',
-      description: `Withdrawals allowed only after ${months} months from policy start date.`,
+      description: `Funds must be held for at least ${months} months before withdrawal.`,
       conditions: [{ field: 'holding_period_months', operator: '>=', value: months }],
       consequence: 'block',
     }
   },
   () => {
-    const threshold = pick([50000, 100000, 200000])
+    const threshold = pick([25000, 50000, 100000, 200000])
     return {
       clause_id: 'CL-7.1',
-      title: 'Maximum Single Transaction Limit',
-      description: `Withdrawals above ${threshold.toLocaleString()} ₪ require supervisor approval.`,
+      category: 'financial',
+      title: 'Auto-Approval Threshold',
+      description: `Withdrawals up to ${threshold.toLocaleString()} ₪ are auto-approved. Above requires supervisor approval.`,
       conditions: [{ field: 'withdrawal_amount', operator: '<=', value: threshold }],
       consequence: 'require_approval',
     }
   },
   () => {
-    const maxRequests = pick([1, 2, 3])
-    const days = pick([30, 60, 90])
+    const maxRequests = pick([1, 2, 3, 5])
     return {
       clause_id: 'CL-5.2',
-      title: 'Cooling-Off Period',
-      description: `No more than ${maxRequests} withdrawal requests per ${days} day period.`,
+      category: 'eligibility',
+      title: 'Maximum Withdrawals Per Year',
+      description: `No more than ${maxRequests} withdrawals per calendar year.`,
       conditions: [{ field: 'recent_withdrawal_count', operator: '<=', value: maxRequests }],
       consequence: 'block',
     }
   },
   () => {
-    const minBalance = pick([1000, 5000, 10000])
+    const minBalance = pick([0, 1000, 5000])
     return {
       clause_id: 'CL-3.8',
+      category: 'financial',
       title: 'Minimum Remaining Balance',
-      description: `After withdrawal, account must maintain minimum balance of ${minBalance.toLocaleString()} ₪ or be fully withdrawn.`,
+      description: `After withdrawal, account must maintain minimum ${minBalance.toLocaleString()} ₪ or be fully withdrawn.`,
       conditions: [{ field: 'remaining_balance', operator: '>=', value: minBalance }],
       consequence: 'block',
     }
   },
-  () => ({
-    clause_id: 'CL-9.1',
-    title: 'Weekend/Holiday Restriction',
-    description: 'Withdrawal requests submitted on weekends or national holidays are held until next business day.',
-    conditions: [{ field: 'request_day', operator: 'not_in', value: ['Friday', 'Saturday'] }],
-    consequence: 'notify',
-  }),
+  () => {
+    const minPct = pick([10, 20, 30])
+    return {
+      clause_id: 'CL-9.1',
+      category: 'withdrawal',
+      title: 'Partial Withdrawal Minimum Retention',
+      description: `Partial withdrawals must leave minimum ${minPct}% of balance.`,
+      conditions: [{ field: 'remaining_balance_pct', operator: '>=', value: minPct }],
+      consequence: 'block',
+    }
+  },
+  () => {
+    const min = pick([1000, 5000, 10000])
+    return {
+      clause_id: 'CL-3.1',
+      category: 'financial',
+      title: 'Minimum Withdrawal Amount',
+      description: `Minimum withdrawal amount: ${min.toLocaleString()} ₪.`,
+      conditions: [{ field: 'withdrawal_amount', operator: '>=', value: min }],
+      consequence: 'block',
+    }
+  },
 ]
 
-const INVESTMENT_TRANSFER_POLICIES = [
+const INVESTMENT_TRANSFER_CLAUSES = [
   () => {
     const minHold = pick([30, 60, 90])
     return {
       clause_id: 'CL-12.1',
+      category: 'eligibility',
       title: 'Track Switch Cooldown',
       description: `Fund transfers between investment tracks require a minimum of ${minHold} days since last track change.`,
       conditions: [{ field: 'days_since_last_transfer', operator: '>=', value: minHold }],
@@ -343,6 +365,7 @@ const INVESTMENT_TRANSFER_POLICIES = [
     const maxPct = pick([25, 50, 75])
     return {
       clause_id: 'CL-12.3',
+      category: 'financial',
       title: 'Maximum Transfer Percentage',
       description: `Single track transfer limited to ${maxPct}% of source track balance.`,
       conditions: [{ field: 'transfer_percentage', operator: '<=', value: maxPct }],
@@ -353,6 +376,7 @@ const INVESTMENT_TRANSFER_POLICIES = [
     const maxTransfers = pick([2, 4, 6])
     return {
       clause_id: 'CL-12.5',
+      category: 'eligibility',
       title: 'Annual Transfer Limit',
       description: `Maximum ${maxTransfers} track transfers permitted per calendar year.`,
       conditions: [{ field: 'annual_transfer_count', operator: '<=', value: maxTransfers }],
@@ -363,6 +387,7 @@ const INVESTMENT_TRANSFER_POLICIES = [
     const threshold = pick([50000, 100000])
     return {
       clause_id: 'CL-12.7',
+      category: 'financial',
       title: 'Large Transfer Approval',
       description: `Track transfers above ${threshold.toLocaleString()} ₪ require supervisor approval and member confirmation.`,
       conditions: [{ field: 'transfer_amount', operator: '<=', value: threshold }],
@@ -371,9 +396,10 @@ const INVESTMENT_TRANSFER_POLICIES = [
   },
 ]
 
-const INVESTMENT_BENEFICIARY_POLICIES = [
+const INVESTMENT_BENEFICIARY_CLAUSES = [
   () => ({
     clause_id: 'CL-15.1',
+    category: 'processing',
     title: 'Beneficiary Percentage Validation',
     description: 'Total beneficiary allocation must equal exactly 100%.',
     conditions: [{ field: 'total_beneficiary_percentage', operator: '==', value: 100 }],
@@ -381,6 +407,7 @@ const INVESTMENT_BENEFICIARY_POLICIES = [
   }),
   () => ({
     clause_id: 'CL-15.3',
+    category: 'processing',
     title: 'Notary Verification Requirement',
     description: 'Beneficiary changes must be notarized or verified by an authorized representative.',
     conditions: [{ field: 'notary_verified', operator: '==', value: true }],
@@ -390,6 +417,7 @@ const INVESTMENT_BENEFICIARY_POLICIES = [
     const days = pick([7, 14, 30])
     return {
       clause_id: 'CL-15.5',
+      category: 'processing',
       title: 'Cooling-Off Period for Beneficiary Changes',
       description: `Beneficiary changes take effect after a ${days}-day cooling-off period. Member can cancel during this period.`,
       conditions: [{ field: 'cooling_off_days', operator: '>=', value: days }],
@@ -398,6 +426,7 @@ const INVESTMENT_BENEFICIARY_POLICIES = [
   },
   () => ({
     clause_id: 'CL-15.7',
+    category: 'processing',
     title: 'Existing Beneficiary Consent',
     description: 'Removed beneficiaries must be notified. Consent from existing beneficiaries recommended.',
     conditions: [{ field: 'beneficiary_consent_obtained', operator: '==', value: true }],
@@ -405,14 +434,15 @@ const INVESTMENT_BENEFICIARY_POLICIES = [
   }),
 ]
 
-const COMPENSATION_WITHDRAWAL_POLICIES = [
+const COMPENSATION_WITHDRAWAL_CLAUSES = [
   (data) => {
-    const age = data?.gender === 'female' ? pick([62, 65]) : pick([65, 67])
+    const age = data?.gender === 'female' ? pick([60, 62, 64]) : pick([65, 67])
     const gender = data?.gender || 'male'
     return {
       clause_id: 'CL-4.3',
-      title: 'Retirement Age Requirement',
-      description: `Standard withdrawal requires age ${age} for ${gender} members.`,
+      category: 'eligibility',
+      title: 'Retirement Age Gate',
+      description: `Standard withdrawal requires retirement age: ${gender} ${age}.`,
       conditions: [{ field: 'age', operator: '>=', value: age }],
       consequence: 'block',
     }
@@ -422,8 +452,9 @@ const COMPENSATION_WITHDRAWAL_POLICIES = [
     const fee = pick([3, 5, 7])
     return {
       clause_id: 'CL-6.2',
-      title: 'Early Withdrawal Tax Clause',
-      description: `Pre-retirement withdrawals subject to income tax rate of ${taxRate}% plus early withdrawal fee of ${fee}%.`,
+      category: 'penalties',
+      title: 'Early Withdrawal Penalties',
+      description: `Pre-maturity withdrawals incur ${taxRate}% income tax + ${fee}% early withdrawal fee.`,
       conditions: [{ field: 'is_early_withdrawal', operator: '==', value: true }],
       consequence: 'apply_fee',
       tax_rate: taxRate,
@@ -434,30 +465,29 @@ const COMPENSATION_WITHDRAWAL_POLICIES = [
     const threshold = pick([50, 75, 100])
     return {
       clause_id: 'CL-8.1',
+      category: 'financial',
       title: 'Employer Consent Requirement',
       description: `Withdrawals exceeding ${threshold}% of compensation balance require employer written consent.`,
       conditions: [{ field: 'withdrawal_percentage', operator: '<=', value: threshold }],
       consequence: 'require_approval',
     }
   },
-  () => {
-    const offset = pick([10, 15, 20])
-    return {
-      clause_id: 'CL-2.5',
-      title: 'Severance Offset',
-      description: `If member was terminated for cause, withdrawal reduced by ${offset}% severance offset.`,
-      conditions: [{ field: 'termination_cause', operator: '==', value: 'for_cause' }],
-      consequence: 'apply_fee',
-      offset_rate: offset,
-    }
-  },
+  () => ({
+    clause_id: 'CL-2.5',
+    category: 'withdrawal',
+    title: 'Early Withdrawal Eligibility',
+    description: 'Early withdrawal (pre-retirement) allowed only if contract permits. If yes, subject to tax clause.',
+    conditions: [{ field: 'early_withdrawal_allowed', operator: '==', value: true }],
+    consequence: 'block',
+  }),
 ]
 
-const COMPENSATION_EMPLOYER_CHANGE_POLICIES = [
+const COMPENSATION_EMPLOYER_CHANGE_CLAUSES = [
   () => {
     const maxGap = pick([30, 45, 60])
     return {
       clause_id: 'CL-20.1',
+      category: 'eligibility',
       title: 'Employment Gap Limit',
       description: `Employer transfer must occur within ${maxGap} days of termination to maintain continuous coverage.`,
       conditions: [{ field: 'gap_days', operator: '<=', value: maxGap }],
@@ -466,6 +496,7 @@ const COMPENSATION_EMPLOYER_CHANGE_POLICIES = [
   },
   () => ({
     clause_id: 'CL-20.3',
+    category: 'processing',
     title: 'Previous Employer Approval',
     description: 'Transfer of compensation funds requires written approval from previous employer.',
     conditions: [{ field: 'employer_approval_received', operator: '==', value: true }],
@@ -473,6 +504,7 @@ const COMPENSATION_EMPLOYER_CHANGE_POLICIES = [
   }),
   () => ({
     clause_id: 'CL-20.5',
+    category: 'processing',
     title: 'Severance Continuity',
     description: 'If severance is included, continuous employment must be verified to maintain severance rights.',
     conditions: [{ field: 'continuous_employment', operator: '==', value: true }],
@@ -482,6 +514,7 @@ const COMPENSATION_EMPLOYER_CHANGE_POLICIES = [
     const minBalance = pick([5000, 10000])
     return {
       clause_id: 'CL-20.7',
+      category: 'financial',
       title: 'Minimum Transfer Balance',
       description: `Employer change transfers must include a minimum balance of ${minBalance.toLocaleString()} ₪.`,
       conditions: [{ field: 'transfer_balance', operator: '>=', value: minBalance }],
@@ -490,9 +523,10 @@ const COMPENSATION_EMPLOYER_CHANGE_POLICIES = [
   },
 ]
 
-const COMPENSATION_BENEFICIARY_POLICIES = [
+const COMPENSATION_BENEFICIARY_CLAUSES = [
   () => ({
     clause_id: 'CL-15.1',
+    category: 'processing',
     title: 'Beneficiary Percentage Validation',
     description: 'Total beneficiary allocation must equal exactly 100%.',
     conditions: [{ field: 'total_beneficiary_percentage', operator: '==', value: 100 }],
@@ -500,6 +534,7 @@ const COMPENSATION_BENEFICIARY_POLICIES = [
   }),
   () => ({
     clause_id: 'CL-15.3',
+    category: 'processing',
     title: 'Notary Verification Requirement',
     description: 'Beneficiary changes must be notarized or verified by an authorized representative.',
     conditions: [{ field: 'notary_verified', operator: '==', value: true }],
@@ -507,6 +542,7 @@ const COMPENSATION_BENEFICIARY_POLICIES = [
   }),
   () => ({
     clause_id: 'CL-15.9',
+    category: 'processing',
     title: 'Employer Notification',
     description: 'For compensation funds, the employer must be notified of beneficiary changes within 14 days.',
     conditions: [{ field: 'employer_notified', operator: '==', value: true }],
@@ -514,6 +550,7 @@ const COMPENSATION_BENEFICIARY_POLICIES = [
   }),
   () => ({
     clause_id: 'CL-15.7',
+    category: 'processing',
     title: 'Existing Beneficiary Consent',
     description: 'Removed beneficiaries must be notified. Consent from existing beneficiaries recommended.',
     conditions: [{ field: 'beneficiary_consent_obtained', operator: '==', value: true }],
@@ -521,11 +558,12 @@ const COMPENSATION_BENEFICIARY_POLICIES = [
   }),
 ]
 
-const STUDY_WITHDRAWAL_POLICIES = [
+const STUDY_WITHDRAWAL_CLAUSES = [
   () => ({
     clause_id: 'CL-4.3',
+    category: 'withdrawal',
     title: 'Liquidity Gate',
-    description: 'Funds accessible only after liquidity date as defined in fund agreement.',
+    description: 'Withdrawals only permitted after liquidity date. Track allocation must be proportional.',
     conditions: [{ field: 'liquidity_date', operator: '<=', value: 'today' }],
     consequence: 'block',
   }),
@@ -533,6 +571,7 @@ const STUDY_WITHDRAWAL_POLICIES = [
     const deviation = pick([5, 10, 15])
     return {
       clause_id: 'CL-7.4',
+      category: 'withdrawal',
       title: 'Track Allocation Rule',
       description: `Withdrawals must maintain proportional allocation across investment tracks (max ${deviation}% deviation).`,
       conditions: [{ field: 'track_deviation', operator: '<=', value: deviation }],
@@ -543,14 +582,16 @@ const STUDY_WITHDRAWAL_POLICIES = [
     const min = pick([5000, 10000, 20000])
     return {
       clause_id: 'CL-3.1',
+      category: 'financial',
       title: 'Minimum Withdrawal Amount',
-      description: `Minimum withdrawal request of ${min.toLocaleString()} ₪.`,
+      description: `Minimum withdrawal amount: ${min.toLocaleString()} ₪.`,
       conditions: [{ field: 'withdrawal_amount', operator: '>=', value: min }],
       consequence: 'block',
     }
   },
   () => ({
     clause_id: 'CL-11.2',
+    category: 'withdrawal',
     title: 'Educational Purpose Clause',
     description: 'Pre-liquidity withdrawals permitted only for accredited educational expenses with documentation.',
     conditions: [{ field: 'has_education_docs', operator: '==', value: true }],
@@ -558,11 +599,12 @@ const STUDY_WITHDRAWAL_POLICIES = [
   }),
 ]
 
-const STUDY_REBALANCE_POLICIES = [
+const STUDY_REBALANCE_CLAUSES = [
   () => {
     const maxDeviation = pick([10, 20, 30])
     return {
       clause_id: 'CL-25.1',
+      category: 'financial',
       title: 'Maximum Rebalance Shift',
       description: `Single rebalance operation cannot shift allocation by more than ${maxDeviation}% between tracks.`,
       conditions: [{ field: 'allocation_shift', operator: '<=', value: maxDeviation }],
@@ -573,6 +615,7 @@ const STUDY_REBALANCE_POLICIES = [
     const minDays = pick([30, 60, 90])
     return {
       clause_id: 'CL-25.3',
+      category: 'eligibility',
       title: 'Rebalance Frequency Limit',
       description: `Track rebalancing permitted only once every ${minDays} days.`,
       conditions: [{ field: 'days_since_last_rebalance', operator: '>=', value: minDays }],
@@ -581,6 +624,7 @@ const STUDY_REBALANCE_POLICIES = [
   },
   () => ({
     clause_id: 'CL-25.5',
+    category: 'processing',
     title: 'Market Hours Restriction',
     description: 'Track rebalancing requests must be submitted during market hours (09:00-17:30 IST).',
     conditions: [{ field: 'request_hour', operator: 'between', value: [9, 17.5] }],
@@ -590,6 +634,7 @@ const STUDY_REBALANCE_POLICIES = [
     const threshold = pick([50000, 100000])
     return {
       clause_id: 'CL-25.7',
+      category: 'financial',
       title: 'Large Rebalance Approval',
       description: `Rebalance operations moving more than ${threshold.toLocaleString()} ₪ require supervisor approval.`,
       conditions: [{ field: 'rebalance_amount', operator: '<=', value: threshold }],
@@ -598,9 +643,10 @@ const STUDY_REBALANCE_POLICIES = [
   },
 ]
 
-const STUDY_EARLY_REDEMPTION_POLICIES = [
+const STUDY_EARLY_REDEMPTION_CLAUSES = [
   () => ({
     clause_id: 'CL-30.1',
+    category: 'withdrawal',
     title: 'Pre-Liquidity Redemption Gate',
     description: 'Early redemption before liquidity date requires documented qualifying reason.',
     conditions: [{ field: 'supporting_documents', operator: '==', value: true }],
@@ -610,6 +656,7 @@ const STUDY_EARLY_REDEMPTION_POLICIES = [
     const taxRate = pick([25, 30, 35])
     return {
       clause_id: 'CL-30.3',
+      category: 'penalties',
       title: 'Early Redemption Tax',
       description: `Early redemption subject to ${taxRate}% capital gains tax on accrued profits.`,
       conditions: [{ field: 'is_early_redemption', operator: '==', value: true }],
@@ -621,6 +668,7 @@ const STUDY_EARLY_REDEMPTION_POLICIES = [
     const validReasons = ['Financial hardship', 'Educational expense', 'Medical expense']
     return {
       clause_id: 'CL-30.5',
+      category: 'eligibility',
       title: 'Qualifying Reason Verification',
       description: `Early redemption permitted only for qualifying reasons: ${validReasons.join(', ')}.`,
       conditions: [{ field: 'redemption_reason', operator: 'in', value: validReasons }],
@@ -629,6 +677,7 @@ const STUDY_EARLY_REDEMPTION_POLICIES = [
   },
   () => ({
     clause_id: 'CL-30.7',
+    category: 'processing',
     title: 'Employer Notification for Early Redemption',
     description: 'Employer must be notified of early redemption within 7 business days.',
     conditions: [{ field: 'employer_notified', operator: '==', value: true }],
@@ -636,30 +685,133 @@ const STUDY_EARLY_REDEMPTION_POLICIES = [
   }),
 ]
 
-// Policy selection map
-const POLICY_MAP = {
+// HITL-triggering clauses — at least one always included
+const HITL_CLAUSES = [
+  () => {
+    const threshold = pick([100000, 200000, 500000])
+    return {
+      clause_id: 'CL-HITL-1',
+      category: 'financial',
+      title: 'High-Value Compliance Review',
+      description: `Withdrawals exceeding ${threshold.toLocaleString()} ₪ require manual compliance review.`,
+      conditions: [{ field: 'withdrawal_amount', operator: '>', value: threshold }],
+      consequence: 'require_hitl',
+    }
+  },
+  () => ({
+    clause_id: 'CL-HITL-2',
+    category: 'processing',
+    title: 'Identity Verification Failure Review',
+    description: 'Identity verification failures must be reviewed by a human operator before re-attempting.',
+    conditions: [{ field: 'id_photo_confidence', operator: '<', value: pick([85, 90, 95]) }],
+    consequence: 'require_hitl',
+  }),
+  () => {
+    const maxRequests = pick([2, 3])
+    const days = pick([90, 180])
+    return {
+      clause_id: 'CL-HITL-3',
+      category: 'eligibility',
+      title: 'Fraud Review',
+      description: `Members with more than ${maxRequests} withdrawal requests in the past ${days} days require fraud review.`,
+      conditions: [{ field: 'recent_withdrawal_count', operator: '>', value: maxRequests }],
+      consequence: 'require_hitl',
+    }
+  },
+  () => {
+    const years = pick([5, 10])
+    return {
+      clause_id: 'CL-HITL-4',
+      category: 'processing',
+      title: 'Account Reconciliation Review',
+      description: `First-time withdrawals from accounts older than ${years} years require account reconciliation review.`,
+      conditions: [{ field: 'account_age_years', operator: '>', value: years }],
+      consequence: 'require_hitl',
+    }
+  },
+]
+
+// Clause selection map
+const CLAUSE_MAP = {
   investment: {
-    withdrawal: INVESTMENT_WITHDRAWAL_POLICIES,
-    fund_transfer: INVESTMENT_TRANSFER_POLICIES,
-    beneficiary_update: INVESTMENT_BENEFICIARY_POLICIES,
+    withdrawal: INVESTMENT_WITHDRAWAL_CLAUSES,
+    fund_transfer: INVESTMENT_TRANSFER_CLAUSES,
+    beneficiary_update: INVESTMENT_BENEFICIARY_CLAUSES,
   },
   compensation: {
-    withdrawal: COMPENSATION_WITHDRAWAL_POLICIES,
-    employer_change: COMPENSATION_EMPLOYER_CHANGE_POLICIES,
-    beneficiary_update: COMPENSATION_BENEFICIARY_POLICIES,
+    withdrawal: COMPENSATION_WITHDRAWAL_CLAUSES,
+    employer_change: COMPENSATION_EMPLOYER_CHANGE_CLAUSES,
+    beneficiary_update: COMPENSATION_BENEFICIARY_CLAUSES,
   },
   study: {
-    withdrawal: STUDY_WITHDRAWAL_POLICIES,
-    fund_transfer: STUDY_REBALANCE_POLICIES,
-    early_redemption: STUDY_EARLY_REDEMPTION_POLICIES,
+    withdrawal: STUDY_WITHDRAWAL_CLAUSES,
+    fund_transfer: STUDY_REBALANCE_CLAUSES,
+    early_redemption: STUDY_EARLY_REDEMPTION_CLAUSES,
   },
 }
 
-export function generatePolicies(fundType, useCase, memberData) {
-  const pool = POLICY_MAP[fundType]?.[useCase] || POLICY_MAP[fundType]?.withdrawal || []
-  const count = randInt(2, Math.min(4, pool.length))
+// SLA clause — always included in every generated contract
+function generateSlaClause() {
+  const slaDays = pick([3, 5, 7])
+  const complexDays = pick([10, 14, 21])
+  return {
+    clause_id: 'SLA-1',
+    category: 'sla',
+    title: 'Processing Time SLA',
+    description: `Standard requests processed within ${slaDays} business days. Complex requests (human review, high-value) processed within ${complexDays} business days.`,
+    conditions: [],
+    consequence: 'notify',
+    sla_business_days: slaDays,
+    sla_complex_business_days: complexDays,
+  }
+}
+
+// Identity verification clause
+function generateIdVerificationClause() {
+  const confidence = pick([85, 90, 95])
+  return {
+    clause_id: 'CL-ID-1',
+    category: 'processing',
+    title: 'Identity Verification Level',
+    description: `Withdrawals require identity verification with minimum confidence of ${confidence}%.`,
+    conditions: [{ field: 'id_photo_confidence', operator: '>=', value: confidence }],
+    consequence: 'block',
+    confidence_threshold: confidence,
+  }
+}
+
+export function generateContract(fundType, useCase, memberData) {
+  const pool = CLAUSE_MAP[fundType]?.[useCase] || CLAUSE_MAP[fundType]?.withdrawal || []
+  const count = randInt(3, Math.min(5, pool.length))
   const shuffled = [...pool].sort(() => Math.random() - 0.5)
-  return shuffled.slice(0, count).map(fn => fn(memberData))
+  const clauses = shuffled.slice(0, count).map(fn => fn(memberData))
+
+  // Always include SLA clause
+  clauses.push(generateSlaClause())
+
+  // Always include at least one HITL clause
+  const hitlShuffled = [...HITL_CLAUSES].sort(() => Math.random() - 0.5)
+  clauses.push(hitlShuffled[0](memberData))
+
+  // Sometimes include identity verification clause
+  if (chance(60)) clauses.push(generateIdVerificationClause())
+
+  const fundTypeLabels = { investment: 'Investment Provident Fund', compensation: 'Compensation Fund', study: 'Study Fund' }
+
+  const effectiveDate = new Date()
+  effectiveDate.setFullYear(effectiveDate.getFullYear() - randInt(1, 5))
+  const expiryDate = new Date()
+  expiryDate.setFullYear(expiryDate.getFullYear() + randInt(1, 10))
+
+  return {
+    contract_id: `CTR-2024-${randDigits(4)}`,
+    customer_name: memberData.member_name,
+    fund_type: fundTypeLabels[fundType] || fundType,
+    insurance_company: pick(INSURANCE_COMPANIES),
+    effective_date: effectiveDate.toISOString().split('T')[0],
+    expiry_date: expiryDate.toISOString().split('T')[0],
+    clauses,
+  }
 }
 
 // --- REGULATIONS ---

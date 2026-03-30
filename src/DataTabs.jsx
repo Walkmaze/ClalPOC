@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 const TABS = [
   { id: 'input', label: 'Input Data' },
-  { id: 'policies', label: 'Policies' },
+  { id: 'policies', label: 'Customer Contract' },
   { id: 'regulations', label: 'Regulations' },
 ]
 
@@ -230,42 +230,82 @@ function InputDataTab({ memberData, setMemberData }) {
   )
 }
 
-function PoliciesTab({ policies, setPolicies }) {
-  if (!policies || policies.length === 0) return <EmptyState text="Generate a scenario to see policies" />
+const CONSEQUENCE_COLORS = {
+  block: 'bg-error/20 text-error',
+  require_approval: 'bg-warning/20 text-warning',
+  require_hitl: 'bg-purple-500/20 text-purple-400',
+  apply_fee: 'bg-amber-500/20 text-amber-300',
+  notify: 'bg-blue-500/20 text-blue-400',
+}
 
-  const updatePolicy = (index, field, value) => {
-    setPolicies(prev => prev.map((p, i) => i === index ? { ...p, [field]: value } : p))
+const CATEGORY_COLORS = {
+  eligibility: 'bg-cyan-500/20 text-cyan-300',
+  financial: 'bg-emerald-500/20 text-emerald-300',
+  processing: 'bg-blue-500/20 text-blue-300',
+  withdrawal: 'bg-amber-500/20 text-amber-300',
+  sla: 'bg-purple-500/20 text-purple-300',
+  penalties: 'bg-red-500/20 text-red-300',
+}
+
+function ContractTab({ contract, setContract }) {
+  if (!contract) return <EmptyState text="Generate a scenario to see contract terms" />
+
+  const updateClause = (index, field, value) => {
+    setContract(prev => ({
+      ...prev,
+      clauses: prev.clauses.map((c, i) => i === index ? { ...c, [field]: value } : c),
+    }))
   }
 
-  const removePolicy = (index) => {
-    setPolicies(prev => prev.filter((_, i) => i !== index))
+  const removeClause = (index) => {
+    setContract(prev => ({
+      ...prev,
+      clauses: prev.clauses.filter((_, i) => i !== index),
+    }))
   }
 
   return (
     <div className="space-y-3 animate-fade-in-up">
-      {policies.map((policy, i) => (
+      {/* Contract header */}
+      <div className="bg-bg-primary rounded-lg border border-border p-3">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+          <div><span className="text-text-muted">Contract ID:</span> <span className="font-mono text-accent">{contract.contract_id}</span></div>
+          <div><span className="text-text-muted">Customer:</span> <span className="text-text-primary">{contract.customer_name}</span></div>
+          <div><span className="text-text-muted">Insurance Company:</span> <span className="text-text-primary">{contract.insurance_company}</span></div>
+          <div><span className="text-text-muted">Fund Type:</span> <span className="text-text-primary">{contract.fund_type}</span></div>
+          <div><span className="text-text-muted">Effective:</span> <span className="text-text-primary">{contract.effective_date}</span></div>
+          <div><span className="text-text-muted">Expires:</span> <span className="text-text-primary">{contract.expiry_date}</span></div>
+        </div>
+      </div>
+
+      <h4 className="text-xs text-text-muted uppercase tracking-wider">Contract Terms ({contract.clauses.length} clauses)</h4>
+
+      {contract.clauses.map((clause, i) => (
         <div key={i} className="bg-bg-primary rounded-lg border border-border p-4">
           <div className="flex items-start justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-accent bg-accent/10 px-2 py-0.5 rounded">{policy.clause_id}</span>
-              <span className="text-xs px-1.5 py-0.5 rounded bg-warning/20 text-warning">{policy.consequence}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-mono text-accent bg-accent/10 px-2 py-0.5 rounded">{clause.clause_id}</span>
+              {clause.category && (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${CATEGORY_COLORS[clause.category] || 'bg-bg-card text-text-muted'}`}>{clause.category}</span>
+              )}
+              <span className={`text-[10px] px-1.5 py-0.5 rounded ${CONSEQUENCE_COLORS[clause.consequence] || 'bg-warning/20 text-warning'}`}>{clause.consequence}</span>
             </div>
-            <button onClick={() => removePolicy(i)} className="text-text-muted hover:text-error text-xs">✕</button>
+            <button onClick={() => removeClause(i)} className="text-text-muted hover:text-error text-xs">✕</button>
           </div>
           <input
-            value={policy.title || ''}
-            onChange={e => updatePolicy(i, 'title', e.target.value)}
+            value={clause.title || ''}
+            onChange={e => updateClause(i, 'title', e.target.value)}
             className="w-full bg-transparent text-sm font-semibold text-text-primary mb-1 focus:outline-none border-b border-transparent focus:border-accent"
           />
           <textarea
-            value={policy.description || ''}
-            onChange={e => updatePolicy(i, 'description', e.target.value)}
+            value={clause.description || ''}
+            onChange={e => updateClause(i, 'description', e.target.value)}
             rows={2}
             className="w-full bg-transparent text-xs text-text-muted mt-1 focus:outline-none resize-none border-b border-transparent focus:border-accent"
           />
-          {policy.conditions && (
+          {clause.conditions && clause.conditions.length > 0 && (
             <div className="mt-2 text-[10px] text-text-muted font-mono">
-              {policy.conditions.map((c, j) => (
+              {clause.conditions.map((c, j) => (
                 <span key={j} className="inline-block bg-bg-card rounded px-1.5 py-0.5 mr-1 mb-1">
                   {c.field} {c.operator} {JSON.stringify(c.value)}
                 </span>
@@ -340,7 +380,7 @@ function EmptyState({ text }) {
   )
 }
 
-export default function DataTabs({ memberData, setMemberData, policies, setPolicies, regulations, setRegulations }) {
+export default function DataTabs({ memberData, setMemberData, contract, setContract, regulations, setRegulations }) {
   const [activeTab, setActiveTab] = useState('input')
 
   return (
@@ -358,8 +398,8 @@ export default function DataTabs({ memberData, setMemberData, policies, setPolic
             }`}
           >
             {tab.label}
-            {tab.id === 'policies' && policies?.length > 0 && (
-              <span className="ml-1.5 text-[10px] bg-accent/20 text-accent px-1.5 rounded-full">{policies.length}</span>
+            {tab.id === 'policies' && contract?.clauses?.length > 0 && (
+              <span className="ml-1.5 text-[10px] bg-accent/20 text-accent px-1.5 rounded-full">{contract.clauses.length}</span>
             )}
             {tab.id === 'regulations' && regulations?.length > 0 && (
               <span className="ml-1.5 text-[10px] bg-accent/20 text-accent px-1.5 rounded-full">{regulations.length}</span>
@@ -374,7 +414,7 @@ export default function DataTabs({ memberData, setMemberData, policies, setPolic
       {/* Tab content */}
       <div className="p-4 max-h-[400px] overflow-y-auto">
         {activeTab === 'input' && <InputDataTab memberData={memberData} setMemberData={setMemberData} />}
-        {activeTab === 'policies' && <PoliciesTab policies={policies} setPolicies={setPolicies} />}
+        {activeTab === 'policies' && <ContractTab contract={contract} setContract={setContract} />}
         {activeTab === 'regulations' && <RegulationsTab regulations={regulations} setRegulations={setRegulations} />}
       </div>
     </div>
