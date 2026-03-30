@@ -412,7 +412,7 @@ export default function DataTabs({ memberData, setMemberData, contract, setContr
       </div>
 
       {/* Tab content */}
-      <div className="p-4 max-h-[400px] overflow-y-auto">
+      <div className="p-4 max-h-[calc(100vh-14rem)] overflow-y-auto">
         {activeTab === 'input' && <InputDataTab memberData={memberData} setMemberData={setMemberData} />}
         {activeTab === 'policies' && <ContractTab contract={contract} setContract={setContract} />}
         {activeTab === 'regulations' && <RegulationsTab regulations={regulations} setRegulations={setRegulations} />}

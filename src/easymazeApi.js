@@ -135,6 +135,17 @@ export function buildServiceDescription(execution, phase) {
   return lines.filter(l => l != null).join('\n')
 }
 
+function extractServiceId(responseData) {
+  if (!responseData || typeof responseData !== 'object') return null
+  // Primary path: em_debug.id (Easymaze actual response)
+  if (responseData.em_debug?.id != null) return String(responseData.em_debug.id)
+  // Fallbacks
+  if (responseData.em_debug?.entity?.id != null) return String(responseData.em_debug.entity.id)
+  if (responseData.data?.id != null) return String(responseData.data.id)
+  if (responseData.id != null) return String(responseData.id)
+  return null
+}
+
 export async function createEasymazeService(execution, settings, phase) {
   if (!settings.enabled || !settings.bearerToken || !settings.apiBaseUrl) {
     return { skipped: true, reason: 'Integration disabled or not configured' }
@@ -196,9 +207,8 @@ export async function createEasymazeService(execution, settings, phase) {
     logEntry.responseBody = responseData
 
     if (response.ok) {
-      const serviceId = responseData?.data?.id || responseData?.id || null
-      const serviceNumber = responseData?.data?.service_number || responseData?.service_number || serviceId
-      return { success: true, serviceId, serviceNumber, logEntry, responseData }
+      const serviceId = extractServiceId(responseData)
+      return { success: true, serviceId, serviceNumber: serviceId, logEntry, responseData }
     } else {
       logEntry.error = `HTTP ${response.status}: ${response.statusText}`
       return { success: false, error: logEntry.error, logEntry, responseData }

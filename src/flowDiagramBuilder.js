@@ -347,9 +347,7 @@ export function buildFlowDiagram(validations, memberData, outcome, onNodeClick, 
   const hasAnyFailure = validations.some(v => v._status === 'fail' && v.severity === 'blocking')
 
   if (outcome && allDone) {
-    if (outcome.type === 'approval') {
-      addApprovalOutcome(nodes, edges, prevMainNodeId, makeId, onNodeClick, memberData, ucName)
-    } else if (outcome.type === 'tax_consent') {
+    if (outcome.type === 'tax_consent') {
       addTaxConsentOutcome(nodes, edges, prevMainNodeId, makeId, onNodeClick, outcome)
     } else if (outcome.type === 'approved') {
       addApprovedOutcome(nodes, edges, prevMainNodeId, makeId, onNodeClick, memberData, fundType, useCase, ucName)
@@ -455,56 +453,6 @@ function addApprovedOutcome(nodes, edges, prevId, makeId, onNodeClick, memberDat
   edges.push({ id: `e-${smsId}-${endId}`, source: smsId, target: endId, type: 'smoothstep', style: { stroke: '#4ADE80', strokeWidth: 2 } })
 }
 
-function addApprovalOutcome(nodes, edges, prevId, makeId, onNodeClick, memberData, ucName) {
-  const splitId = makeId('split-thresh')
-  nodes.push({
-    id: splitId,
-    type: 'splitter',
-    position: { x: 0, y: 0 },
-    data: {
-      label: 'Amount > threshold?',
-      status: 'fail',
-      nodeType: 'splitter',
-      onNodeClick,
-      condition: 'withdrawal_amount > 50000',
-      actualValue: memberData?.withdrawal_amount ? `₪${memberData.withdrawal_amount.toLocaleString()}` : undefined,
-      branchTaken: 'Yes',
-    },
-  })
-  connectFromPrev(edges, prevId, splitId, '#4ADE80')
-
-  const taskId = makeId('ws-task')
-  nodes.push({
-    id: taskId,
-    type: 'webservice',
-    position: { x: 0, y: 0 },
-    data: { label: 'WS: Create approval task', status: 'pass', nodeType: 'webservice', onNodeClick, endpoint: 'POST /api/tasks/create' },
-  })
-  edges.push({
-    id: `e-${splitId}-${taskId}`, source: splitId, sourceHandle: 'no', target: taskId,
-    type: 'smoothstep', label: 'Yes',
-    style: { stroke: '#FBBF24', strokeWidth: 2 },
-    labelStyle: { fill: '#FBBF24', fontSize: 10, fontWeight: 600 }, labelBgStyle: { fill: '#0D2E2F' },
-  })
-
-  const notifyId = makeId('ws-notify')
-  nodes.push({
-    id: notifyId,
-    type: 'webservice',
-    position: { x: 0, y: 0 },
-    data: { label: 'WS: Notify customer', status: 'pass', nodeType: 'webservice', onNodeClick, endpoint: 'POST /api/notifications/sms' },
-  })
-  edges.push({ id: `e-${taskId}-${notifyId}`, source: taskId, target: notifyId, type: 'smoothstep', style: { stroke: '#FBBF24', strokeWidth: 2 } })
-
-  const endId = makeId('end-approval')
-  nodes.push({
-    id: endId,
-    type: 'startEnd',
-    position: { x: 0, y: 0 },
-    data: { label: 'End: Pending Approval', isEnd: true, endType: 'awaiting', status: 'pass' },
-  })
-  edges.push({ id: `e-${notifyId}-${endId}`, source: notifyId, target: endId, type: 'smoothstep', style: { stroke: '#FBBF24', strokeWidth: 2 } })
-}
 
 function addTaxConsentOutcome(nodes, edges, prevId, makeId, onNodeClick, outcome) {
   const taxId = makeId('ws-tax')

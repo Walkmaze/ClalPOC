@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { FUND_TYPES, USE_CASES } from './dataGenerators'
 import DataTabs from './DataTabs'
 
+const FLOOD_PRESETS = [5, 10, 20, 50]
+
 export default function ScenarioBuilder({
   fundType, setFundType,
   useCase, setUseCase,
@@ -10,7 +12,9 @@ export default function ScenarioBuilder({
   regulations, setRegulations,
   onGenerate, onLaunch,
   isRunning, apiKey, setApiKey,
+  onFlood, floodProgress,
 }) {
+  const [floodCount, setFloodCount] = useState(10)
   const currentUseCases = USE_CASES[fundType] || []
 
   const handleFundTypeChange = (newFundType) => {
@@ -105,6 +109,47 @@ export default function ScenarioBuilder({
         {memberData && !apiKey && (
           <p className="text-[10px] text-warning text-center -mt-3">API key required to launch</p>
         )}
+
+        {/* Bulk Launch */}
+        <div className="bg-bg-card rounded-xl border border-border p-4">
+          <h3 className="text-xs text-text-muted uppercase tracking-wider mb-2">Bulk Launch</h3>
+          <p className="text-[11px] text-text-muted mb-3">Generate and launch multiple random scenarios with mixed fund types and outcomes. No API key needed.</p>
+
+          <div className="flex gap-1.5 mb-3">
+            {FLOOD_PRESETS.map(n => (
+              <button
+                key={n}
+                onClick={() => setFloodCount(n)}
+                className={`flex-1 text-xs py-1.5 rounded-lg border transition-colors ${
+                  floodCount === n
+                    ? 'border-accent bg-accent/15 text-accent font-semibold'
+                    : 'border-border bg-bg-primary text-text-muted hover:text-text-primary'
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+
+          {floodCount >= 50 && (
+            <p className="text-[10px] text-warning mb-2">50 scenarios will take ~15-20 seconds to inject.</p>
+          )}
+
+          <button
+            onClick={() => onFlood?.(floodCount)}
+            disabled={!!floodProgress}
+            className="w-full bg-warning hover:bg-warning/80 disabled:bg-border disabled:text-text-muted text-bg-primary font-bold rounded-lg px-4 py-3 text-sm transition-colors flex items-center justify-center gap-2"
+          >
+            {floodProgress ? (
+              <>
+                <span className="inline-block w-4 h-4 border-2 border-bg-primary border-t-transparent rounded-full animate-spin" />
+                {floodProgress.launched} / {floodProgress.total}
+              </>
+            ) : (
+              <>🚀 Flood the System</>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Right area — data tabs */}

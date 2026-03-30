@@ -102,7 +102,7 @@ const PRIORITY_FILTER_OPTIONS = [
   { value: 'Low', label: 'Low' },
 ]
 
-export default function ExecutionsList({ executions, onSelect, onGoToBuilder }) {
+export default function ExecutionsList({ executions, onSelect, onGoToBuilder, onFlood }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [priorityFilter, setPriorityFilter] = useState('')
@@ -192,15 +192,25 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder }) 
           </svg>
         </div>
         <h3 className="text-lg font-semibold text-text-primary mb-2">No executions yet</h3>
-        <p className="text-sm text-text-muted mb-4">Go to Scenario Builder to launch your first flow.</p>
-        {onGoToBuilder && (
-          <button
-            onClick={onGoToBuilder}
-            className="text-sm text-accent hover:text-accent/80 transition-colors"
-          >
-            Open Scenario Builder →
-          </button>
-        )}
+        <p className="text-sm text-text-muted mb-4">Go to Scenario Builder to launch your first flow, or flood the system with sample data.</p>
+        <div className="flex items-center gap-3">
+          {onGoToBuilder && (
+            <button
+              onClick={onGoToBuilder}
+              className="text-sm text-accent hover:text-accent/80 transition-colors"
+            >
+              Open Scenario Builder →
+            </button>
+          )}
+          {onFlood && (
+            <button
+              onClick={() => onFlood(10)}
+              className="bg-warning hover:bg-warning/80 text-bg-primary font-semibold rounded-lg px-4 py-2 text-sm transition-colors flex items-center gap-1.5"
+            >
+              🚀 Launch 10 random scenarios
+            </button>
+          )}
+        </div>
       </div>
     )
   }
@@ -211,11 +221,11 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder }) 
     <div>
       {/* Summary stats bar */}
       <div className="grid grid-cols-5 gap-3 mb-5">
-        <StatCard label="Total" value={stats.total} color="text-text-primary" bg="bg-bg-card" />
-        <StatCard label="Success" value={stats.success} color="text-success" bg="bg-success/5" dot="bg-success" />
-        <StatCard label="Failed" value={stats.failed} color="text-error" bg="bg-error/5" dot="bg-error" />
-        <StatCard label="Running" value={stats.running} color="text-blue-400" bg="bg-blue-500/5" dot="bg-blue-400" pulse />
-        <StatCard label="Needs HITL" value={stats.hitl} color="text-warning" bg="bg-warning/5" dot="bg-warning" />
+        <StatCard label="Total" value={stats.total} color="text-text-primary" bg="bg-bg-card" active={!statusFilter} onClick={() => setStatusFilter('')} />
+        <StatCard label="Success" value={stats.success} color="text-success" bg="bg-success/5" dot="bg-success" active={statusFilter === 'success'} onClick={() => setStatusFilter(statusFilter === 'success' ? '' : 'success')} />
+        <StatCard label="Failed" value={stats.failed} color="text-error" bg="bg-error/5" dot="bg-error" active={statusFilter === 'failed'} onClick={() => setStatusFilter(statusFilter === 'failed' ? '' : 'failed')} />
+        <StatCard label="Running" value={stats.running} color="text-blue-400" bg="bg-blue-500/5" dot="bg-blue-400" pulse active={statusFilter === 'running'} onClick={() => setStatusFilter(statusFilter === 'running' ? '' : 'running')} />
+        <StatCard label="Needs HITL" value={stats.hitl} color="text-warning" bg="bg-warning/5" dot="bg-warning" active={statusFilter === 'hitl'} onClick={() => setStatusFilter(statusFilter === 'hitl' ? '' : 'hitl')} />
       </div>
 
       {/* Header bar with search and filters */}
@@ -352,18 +362,16 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder }) 
                   <td className="py-3 px-4 text-xs text-text-muted">{relTime}</td>
                   <td className="py-3 px-4 text-xs text-text-muted">{exec.useCaseLabel}</td>
                   <td className="py-3 px-2 text-center" onClick={e => e.stopPropagation()}>
-                    {exec.easymazeStatus === 'synced' && exec.easymazeServiceId ? (
+                    {exec.easymazeStatus === 'synced' ? (
                       <a
-                        href={`https://app.dev-easymaze.mazemateapp.com/services/${exec.easymazeServiceId}`}
+                        href={`https://app.dev-easymaze.mazemateapp.com/services/${exec.easymazeServiceId || exec.easymazeServiceNumber || ''}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-success hover:text-success/80 text-xs transition-colors"
-                        title={`Open Service #${exec.easymazeServiceNumber || exec.easymazeServiceId} in Easymaze`}
+                        title={`Open Service #${exec.easymazeServiceNumber || exec.easymazeServiceId || ''} in Easymaze`}
                       >
                         🔗
                       </a>
-                    ) : exec.easymazeStatus === 'synced' ? (
-                      <span className="text-success text-xs" title="Synced">🔗</span>
                     ) : exec.easymazeStatus === 'failed' ? (
                       <span className="text-error text-xs" title={exec.easymazeError || 'Failed'}>⚠️🔗</span>
                     ) : null}
@@ -394,9 +402,14 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder }) 
   )
 }
 
-function StatCard({ label, value, color, bg, dot, pulse }) {
+function StatCard({ label, value, color, bg, dot, pulse, active, onClick }) {
   return (
-    <div className={`${bg} rounded-xl border border-border p-4 text-center`}>
+    <div
+      onClick={onClick}
+      className={`${bg} rounded-xl border p-4 text-center cursor-pointer transition-all ${
+        active ? 'border-accent ring-1 ring-accent/30' : 'border-border hover:border-text-muted/30'
+      }`}
+    >
       <div className="flex items-center justify-center gap-2 mb-1">
         {dot && (
           <span className="relative flex h-2 w-2">

@@ -113,21 +113,19 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
           <div>
             <span className="text-[10px] text-text-muted uppercase">Easymaze</span>
             <p className="text-xs">
-              {execution.easymazeStatus === 'synced' && execution.easymazeServiceId ? (
+              {execution.easymazeStatus === 'synced' ? (
                 <a
-                  href={`https://app.dev-easymaze.mazemateapp.com/services/${execution.easymazeServiceId}`}
+                  href={`https://app.dev-easymaze.mazemateapp.com/services/${execution.easymazeServiceId || execution.easymazeServiceNumber || ''}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-success hover:text-success/80 transition-colors inline-flex items-center gap-1"
-                  title={`Open Service #${execution.easymazeServiceNumber || execution.easymazeServiceId} in Easymaze`}
+                  title={`Open Service in Easymaze`}
                 >
-                  🔗 #{execution.easymazeServiceNumber || execution.easymazeServiceId}
+                  🔗 {execution.easymazeServiceNumber || execution.easymazeServiceId ? `#${execution.easymazeServiceNumber || execution.easymazeServiceId}` : 'Synced'}
                   <svg className="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </a>
-              ) : execution.easymazeStatus === 'synced' ? (
-                <span className="text-success">🔗 Synced</span>
               ) : execution.easymazeStatus === 'failed' ? (
                 <span className="text-error" title={execution.easymazeError || 'Failed'}>⚠️🔗 Failed</span>
               ) : (

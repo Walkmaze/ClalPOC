@@ -121,7 +121,6 @@ const OUTCOME_CONFIGS = {
     blocked: { icon: '🚫', title: 'Withdrawal Blocked' },
     customer_action: { icon: '📋', title: 'Customer Action Required' },
     tax_consent: { icon: '💰', title: 'Early Withdrawal — Tax & Fees' },
-    approval: { icon: '👤', title: 'Human Approval Required' },
   },
   fund_transfer: {
     approved: { icon: '✅', title: 'Fund Transfer Approved' },
@@ -158,7 +157,6 @@ const TYPE_STYLES = {
   blocked: { border: 'border-error', bg: 'bg-error/10' },
   customer_action: { border: 'border-error', bg: 'bg-error/10' },
   tax_consent: { border: 'border-warning', bg: 'bg-warning/10' },
-  approval: { border: 'border-warning', bg: 'bg-warning/10' },
 }
 
 // Fund-type-specific SMS messages matching the reference use cases
@@ -171,7 +169,6 @@ function getSmsMessages(fundType, uc) {
       blocked: () => 'בקשת המשיכה מקופת הגמל להשקעה נדחתה. לפרטים נוספים אנא פנה/י לשירות הלקוחות.',
       customer_action_id: () => 'בקשת המשיכה שלך התקבלה, אך צילום תעודת הזהות אינו תקין. אנא העלה צילום ברור של תעודת הזהות כדי שנוכל להמשיך בטיפול. קישור: secure.insurer.co.il/upload-id',
       customer_action_bank: () => 'בקשת המשיכה שלך התקבלה, אך חשבון הבנק שהוזן אינו רשום על שמך. אנא עדכן את פרטי חשבון הבנק.',
-      approval: () => 'בקשת המשיכה שלך התקבלה. הבקשה נמצאת בבדיקה ותקבל עדכון בהקדם.',
     }
   }
   // Compensation Fund SMS
@@ -268,7 +265,6 @@ function OutcomeCard({ outcome, onApprove, onReject, useCase, memberData }) {
         return fundSms.blocked()
       }
       if (outcome.type === 'tax_consent' && fundSms.tax_consent) return fundSms.tax_consent({ ...memberData, breakdown: outcome.breakdown })
-      if (outcome.type === 'approval' && fundSms.approval) return fundSms.approval()
     }
     // Non-withdrawal use cases
     if (ucSms) {
@@ -421,21 +417,6 @@ function OutcomeCard({ outcome, onApprove, onReject, useCase, memberData }) {
         </div>
       )}
 
-      {/* Human Approval — show task creation */}
-      {outcome.type === 'approval' && (
-        <div className="space-y-2 text-xs mb-4">
-          <div className="bg-bg-primary rounded-lg p-3 font-mono text-warning">
-            <p>→ Task created: TASK-{Math.random().toString(36).substring(2, 7).toUpperCase()}</p>
-            <p className="text-text-muted mt-1">Queue: "Withdrawal Approval" | Priority: Medium</p>
-            <p className="text-text-muted">Reason: Amount exceeds automatic approval threshold</p>
-          </div>
-          <div className="bg-bg-primary rounded-lg p-3">
-            <p className="text-text-muted mb-1">SMS sent to customer:</p>
-            <p className="text-text-primary" dir="rtl">{getSmsText()}</p>
-          </div>
-        </div>
-      )}
-
       {/* Tax consent — show breakdown SMS */}
       {outcome.type === 'tax_consent' && (
         <div className="bg-bg-primary rounded-lg p-3 text-xs mb-4">
@@ -445,19 +426,19 @@ function OutcomeCard({ outcome, onApprove, onReject, useCase, memberData }) {
       )}
 
       {/* Action buttons */}
-      {(outcome.type === 'approval' || outcome.type === 'tax_consent') && (
+      {outcome.type === 'tax_consent' && (
         <div className="flex gap-3 mt-4">
           <button
             onClick={onApprove}
             className="flex-1 bg-success hover:bg-success/80 text-bg-primary font-semibold rounded-lg px-4 py-2.5 text-sm transition-colors"
           >
-            {outcome.type === 'tax_consent' ? 'Accept & Proceed' : 'Approve'}
+            Accept & Proceed
           </button>
           <button
             onClick={onReject}
             className="flex-1 bg-error hover:bg-error/80 text-bg-primary font-semibold rounded-lg px-4 py-2.5 text-sm transition-colors"
           >
-            {outcome.type === 'tax_consent' ? 'Cancel' : 'Reject'}
+            Cancel
           </button>
         </div>
       )}
