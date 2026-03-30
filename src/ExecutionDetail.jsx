@@ -2,6 +2,7 @@ import { useState } from 'react'
 import FlowExecution from './FlowExecution'
 import AuditTrail from './AuditTrail'
 import HitlPanel from './HitlPanel'
+import ApiLogsPanel from './ApiLogsPanel'
 
 const STATUS_COLORS = {
   RUNNING: 'bg-accent/20 text-accent',
@@ -37,6 +38,7 @@ function formatSlaDeadline(deadline) {
 
 export default function ExecutionDetail({ execution, onApprove, onReject, onBack, onHitlResolve }) {
   const [hitlValidationIndex, setHitlValidationIndex] = useState(null)
+  const [activeDetailTab, setActiveDetailTab] = useState('flow')
 
   if (!execution) return null
 
@@ -59,6 +61,8 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
     onHitlResolve?.(execution.id, validationIndex, decision, stepData)
   }
 
+  const apiLogCount = execution.apiLogs?.length || 0
+
   return (
     <div>
       {/* Back + header */}
@@ -73,7 +77,7 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
 
       {/* Process info bar */}
       <div className="bg-bg-card rounded-xl border border-border p-4 mb-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
           <div>
             <span className="text-[10px] text-text-muted uppercase">Process ID</span>
             <p className="text-sm font-mono text-accent">{execution.processId}</p>
@@ -106,6 +110,22 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
               {execution.status}
             </p>
           </div>
+          <div>
+            <span className="text-[10px] text-text-muted uppercase">Easymaze</span>
+            <p className="text-xs">
+              {execution.easymazeStatus === 'synced' && (
+                <span className="text-success" title={execution.easymazeServiceNumber ? `Service #${execution.easymazeServiceNumber}` : 'Synced'}>
+                  🔗 {execution.easymazeServiceNumber ? `#${execution.easymazeServiceNumber}` : 'Synced'}
+                </span>
+              )}
+              {execution.easymazeStatus === 'failed' && (
+                <span className="text-error" title={execution.easymazeError || 'Failed'}>⚠️🔗 Failed</span>
+              )}
+              {!execution.easymazeStatus && (
+                <span className="text-text-muted">—</span>
+              )}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -116,47 +136,81 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
         </div>
       )}
 
-      {/* Flow + HITL Panel layout */}
-      <div className="flex gap-0">
-        <div className={`flex-1 min-w-0 ${showHitlPanel ? 'mr-4' : ''}`}>
-          {/* Flow Execution */}
-          <FlowExecution
-            analysisMessages={execution.analysisMessages}
-            validations={execution.validations}
-            validationStatuses={execution.validationStatuses}
-            validationResults={execution.validationResults}
-            outcome={execution.outcome}
-            onApprove={onApprove}
-            onReject={onReject}
-            useCase={execution.useCase}
-            memberData={execution.memberData}
-            onHitlCardClick={handleHitlCardClick}
-          />
-
-          {/* Audit Trail */}
-          <AuditTrail
-            entries={execution.auditEntries}
-            processInfo={{
-              processId: execution.processId,
-              memberId: execution.memberData?.member_id,
-              memberName: execution.memberName,
-              fundType: execution.fundTypeLabel,
-              useCase: execution.useCaseLabel,
-              status: execution.status,
-            }}
-          />
-        </div>
-
-        {/* HITL Side Panel */}
-        {showHitlPanel && (
-          <HitlPanel
-            validation={hitlValidation}
-            validationIndex={hitlValidationIndex}
-            onResolve={handleHitlResolve}
-            onClose={() => setHitlValidationIndex(null)}
-          />
-        )}
+      {/* Detail tabs: Flow / API Logs */}
+      <div className="flex items-center gap-1 mb-4">
+        <button
+          onClick={() => setActiveDetailTab('flow')}
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+            activeDetailTab === 'flow' ? 'bg-accent text-bg-primary' : 'bg-bg-card text-text-muted hover:text-text-primary border border-border'
+          }`}
+        >
+          Flow Execution
+        </button>
+        <button
+          onClick={() => setActiveDetailTab('apiLogs')}
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
+            activeDetailTab === 'apiLogs' ? 'bg-accent text-bg-primary' : 'bg-bg-card text-text-muted hover:text-text-primary border border-border'
+          }`}
+        >
+          🔌 API Logs
+          {apiLogCount > 0 && (
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeDetailTab === 'apiLogs' ? 'bg-bg-primary/30 text-bg-primary' : 'bg-accent/20 text-accent'}`}>
+              {apiLogCount}
+            </span>
+          )}
+        </button>
       </div>
+
+      {/* Flow + HITL Panel layout */}
+      {activeDetailTab === 'flow' && (
+        <div className="flex gap-0">
+          <div className={`flex-1 min-w-0 ${showHitlPanel ? 'mr-4' : ''}`}>
+            <FlowExecution
+              analysisMessages={execution.analysisMessages}
+              validations={execution.validations}
+              validationStatuses={execution.validationStatuses}
+              validationResults={execution.validationResults}
+              outcome={execution.outcome}
+              onApprove={onApprove}
+              onReject={onReject}
+              useCase={execution.useCase}
+              memberData={execution.memberData}
+              onHitlCardClick={handleHitlCardClick}
+            />
+
+            <AuditTrail
+              entries={execution.auditEntries}
+              processInfo={{
+                processId: execution.processId,
+                memberId: execution.memberData?.member_id,
+                memberName: execution.memberName,
+                fundType: execution.fundTypeLabel,
+                useCase: execution.useCaseLabel,
+                status: execution.status,
+              }}
+            />
+          </div>
+
+          {showHitlPanel && (
+            <HitlPanel
+              validation={hitlValidation}
+              validationIndex={hitlValidationIndex}
+              onResolve={handleHitlResolve}
+              onClose={() => setHitlValidationIndex(null)}
+            />
+          )}
+        </div>
+      )}
+
+      {/* API Logs tab */}
+      {activeDetailTab === 'apiLogs' && (
+        <div className="bg-bg-card rounded-xl border border-border p-5">
+          <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-4">
+            API Call Log for {execution.processId}
+          </h3>
+          <ApiLogsPanel apiLogs={execution.apiLogs} />
+        </div>
+      )}
     </div>
   )
 }

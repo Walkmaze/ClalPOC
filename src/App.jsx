@@ -2,9 +2,11 @@ import { useState, useCallback, useRef } from 'react'
 import ScenarioBuilder from './ScenarioBuilder'
 import ExecutionsList from './ExecutionsList'
 import ExecutionDetail from './ExecutionDetail'
+import SettingsPanel from './SettingsPanel'
 import { generateMemberData, generateContract, generateRegulations, FUND_TYPES, USE_CASES, getUseCaseLabel } from './dataGenerators'
 import { callClaude } from './claudeApi'
 import { executeValidation, determineOutcome } from './validationEngine'
+import { loadSettings, saveSettings, createEasymazeService } from './easymazeApi'
 
 function formatTime() {
   const now = new Date()
@@ -68,8 +70,17 @@ export default function App() {
   const [isLaunching, setIsLaunching] = useState(false)
 
   const [executions, setExecutions] = useState([])
+  const [emSettings, setEmSettings] = useState(() => loadSettings())
   const abortRefs = useRef({})
   const hitlResolvers = useRef({})
+
+  const handleSetEmSettings = useCallback((updater) => {
+    setEmSettings(prev => {
+      const next = typeof updater === 'function' ? updater(prev) : updater
+      saveSettings(next)
+      return next
+    })
+  }, [])
 
   const handleSetApiKey = useCallback((key) => {
     setApiKey(key)
@@ -112,8 +123,60 @@ export default function App() {
       { icon: '🧠', text: `Determining required validation steps for ${ucLabel}...` },
     ]
 
+    const addApiLog = (logEntry) => {
+      setExecutions(prev => prev.map(ex =>
+        ex.id === execId
+          ? { ...ex, apiLogs: [...(ex.apiLogs || []), logEntry] }
+          : ex
+      ))
+    }
+
+    const tryEasymaze = async (phase) => {
+      // Get latest execution state for description
+      const latestExec = await new Promise(resolve => {
+        setExecutions(prev => {
+          const ex = prev.find(e => e.id === execId)
+          resolve(ex)
+          return prev
+        })
+      })
+      if (!latestExec) return
+
+      const result = await createEasymazeService(latestExec, emSettings, phase)
+      if (result.skipped) return
+
+      if (result.logEntry) addApiLog(result.logEntry)
+
+      if (result.success) {
+        if (phase === 'launch' && result.serviceNumber) {
+          updateExecution(execId, { easymazeServiceNumber: result.serviceNumber, easymazeStatus: 'synced' })
+        } else if (phase === 'launch') {
+          updateExecution(execId, { easymazeStatus: 'synced' })
+        }
+        addAudit({
+          action: phase === 'launch' ? 'Create Easymaze Service' : 'Update Easymaze Service',
+          category: 'integration',
+          source: '—',
+          result: 'SUCCESS',
+          details: result.serviceNumber ? `Service #${result.serviceNumber} created` : 'Service record created',
+        })
+      } else {
+        updateExecution(execId, { easymazeStatus: 'failed', easymazeError: result.error })
+        addAudit({
+          action: phase === 'launch' ? 'Create Easymaze Service' : 'Update Easymaze Service',
+          category: 'integration',
+          source: '—',
+          result: 'FAIL',
+          details: result.error || 'API call failed',
+        })
+      }
+    }
+
     updateExecution(execId, { analysisMessages: [] })
     addAudit({ action: 'Request intake', category: 'system', source: '—', result: 'SUCCESS', details: `${ucIcon} ${ucLabel} — Process initiated` })
+
+    // Easymaze: Create service on launch
+    tryEasymaze('launch')
 
     for (let i = 0; i < messages.length; i++) {
       if (abortRefs.current[execId]) return
@@ -347,7 +410,11 @@ export default function App() {
       result: finalOutcome.type === 'approved' ? 'SUCCESS' : finalOutcome.type === 'blocked' ? 'FAIL' : 'WARNING',
       details: finalOutcome.message,
     })
-  }, [apiKey, updateExecution])
+
+    // Easymaze: Update service on completion
+    await delay(200)
+    tryEasymaze('completion')
+  }, [apiKey, updateExecution, emSettings])
 
   const handleLaunch = useCallback(() => {
     if (!memberData || !apiKey || !contract) return
@@ -383,6 +450,10 @@ export default function App() {
       validationResults: [],
       outcome: null,
       auditEntries: [],
+      apiLogs: [],
+      easymazeStatus: null,
+      easymazeServiceNumber: null,
+      easymazeError: null,
       error: null,
     }
 
@@ -490,6 +561,19 @@ export default function App() {
             >
               Scenario Builder
             </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`px-4 py-3.5 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'settings'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-text-muted hover:text-text-primary'
+              }`}
+            >
+              ⚙ Settings
+              {emSettings.enabled && (
+                <span className="ml-1.5 w-1.5 h-1.5 inline-block rounded-full bg-success" />
+              )}
+            </button>
           </nav>
         </div>
         <p className="text-[10px] text-text-muted">Insurance Back-Office Automation</p>
@@ -515,6 +599,10 @@ export default function App() {
             apiKey={apiKey}
             setApiKey={handleSetApiKey}
           />
+        )}
+
+        {activeTab === 'settings' && (
+          <SettingsPanel settings={emSettings} setSettings={handleSetEmSettings} />
         )}
 
         {activeTab === 'executions' && !selectedExecutionId && (
