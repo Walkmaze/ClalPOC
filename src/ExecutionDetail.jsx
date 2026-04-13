@@ -2,7 +2,7 @@ import { useState } from 'react'
 import FlowExecution from './FlowExecution'
 import AuditTrail from './AuditTrail'
 import HitlPanel from './HitlPanel'
-import ApiLogsPanel from './ApiLogsPanel'
+import DriverUPayload from './ApiLogsPanel'
 import { useT } from './i18n'
 
 const STATUS_COLORS = {
@@ -63,8 +63,6 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
     onHitlResolve?.(execution.id, validationIndex, decision, stepData)
   }
 
-  const apiLogCount = execution.apiLogs?.length || 0
-
   return (
     <div>
       {/* Back + header */}
@@ -112,29 +110,6 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
               {t(`status.${execution.status}`, execution.status)}
             </p>
           </div>
-          <div>
-            <span className="text-[10px] text-text-muted uppercase">{t('detail.easymaze')}</span>
-            <p className="text-xs">
-              {execution.easymazeStatus === 'synced' ? (
-                <a
-                  href={`https://app.dev-easymaze.mazemateapp.com/services/${execution.easymazeServiceId || execution.easymazeServiceNumber || ''}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-success hover:text-success/80 transition-colors inline-flex items-center gap-1"
-                  title={t('detail.openService')}
-                >
-                  🔗 {execution.easymazeServiceNumber || execution.easymazeServiceId ? `#${execution.easymazeServiceNumber || execution.easymazeServiceId}` : t('detail.synced')}
-                  <svg className="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                </a>
-              ) : execution.easymazeStatus === 'failed' ? (
-                <span className="text-error" title={execution.easymazeError || t('detail.failed')}>⚠️🔗 {t('detail.failed')}</span>
-              ) : (
-                <span className="text-text-muted">—</span>
-              )}
-            </p>
-          </div>
         </div>
       </div>
 
@@ -156,17 +131,12 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
           {t('detail.flowExecution')}
         </button>
         <button
-          onClick={() => setActiveDetailTab('apiLogs')}
+          onClick={() => setActiveDetailTab('payload')}
           className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
-            activeDetailTab === 'apiLogs' ? 'bg-accent text-bg-primary' : 'bg-bg-card text-text-muted hover:text-text-primary border border-border'
+            activeDetailTab === 'payload' ? 'bg-accent text-bg-primary' : 'bg-bg-card text-text-muted hover:text-text-primary border border-border'
           }`}
         >
-          🔌 {t('detail.apiLogs')}
-          {apiLogCount > 0 && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeDetailTab === 'apiLogs' ? 'bg-bg-primary/30 text-bg-primary' : 'bg-accent/20 text-accent'}`}>
-              {apiLogCount}
-            </span>
-          )}
+          📦 {t('detail.driverUPayload')}
         </button>
       </div>
 
@@ -211,13 +181,13 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
         </div>
       )}
 
-      {/* API Logs tab */}
-      {activeDetailTab === 'apiLogs' && (
+      {/* DriverU Payload tab */}
+      {activeDetailTab === 'payload' && (
         <div className="bg-bg-card rounded-xl border border-border p-5">
           <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-4">
-            {t('detail.apiCallLog')} {execution.processId}
+            {t('detail.driverUPayload')} — {execution.processId}
           </h3>
-          <ApiLogsPanel apiLogs={execution.apiLogs} />
+          <DriverUPayload execution={execution} />
         </div>
       )}
     </div>

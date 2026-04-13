@@ -305,7 +305,6 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
               <SortHeader field="slaDeadline">{t('executions.sla')}</SortHeader>
               <SortHeader field="timestamp">{t('executions.launched')}</SortHeader>
               <SortHeader field="useCaseLabel">{t('executions.action')}</SortHeader>
-              <th className="py-3 px-2 w-8 text-center text-text-muted text-[10px] uppercase">{t('executions.sync')}</th>
               <th className="py-3 px-3 w-10"></th>
             </tr>
           </thead>
@@ -355,21 +354,6 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
                   </td>
                   <td className="py-3 px-4 text-xs text-text-muted">{relTime}</td>
                   <td className="py-3 px-4 text-xs text-text-muted">{exec.useCaseLabel}</td>
-                  <td className="py-3 px-2 text-center" onClick={e => e.stopPropagation()}>
-                    {exec.easymazeStatus === 'synced' ? (
-                      <a
-                        href={`https://app.dev-easymaze.mazemateapp.com/services/${exec.easymazeServiceId || exec.easymazeServiceNumber || ''}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-success hover:text-success/80 text-xs transition-colors"
-                        title={`Open Service #${exec.easymazeServiceNumber || exec.easymazeServiceId || ''} in Easymaze`}
-                      >
-                        🔗
-                      </a>
-                    ) : exec.easymazeStatus === 'failed' ? (
-                      <span className="text-error text-xs" title={exec.easymazeError || 'Failed'}>⚠️🔗</span>
-                    ) : null}
-                  </td>
                   <td className="py-3 px-3 text-text-muted hover:text-accent transition-colors">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />

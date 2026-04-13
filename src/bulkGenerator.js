@@ -401,11 +401,6 @@ export function generateBulkScenarios(count) {
       validationResults: results,
       outcome,
       auditEntries,
-      apiLogs: [],
-      easymazeStatus: null,
-      easymazeServiceId: null,
-      easymazeServiceNumber: null,
-      easymazeError: null,
       error: null,
     })
   }

@@ -14,35 +14,16 @@ const translations = {
   'flood.of': { en: 'of', he: 'מתוך' },
 
   // ── Settings Panel ──
-  'settings.title': { en: 'Easymaze Integration Settings', he: 'הגדרות חיבור Easymaze' },
   'settings.language': { en: 'Language', he: 'שפה' },
   'settings.language.en': { en: 'English', he: 'English' },
   'settings.language.he': { en: 'עברית', he: 'עברית' },
   'settings.language.desc': { en: 'Interface language and text direction', he: 'שפת ממשק וכיוון טקסט' },
-  'settings.apiBaseUrl': { en: 'API Base URL', he: 'כתובת API בסיסית' },
-  'settings.bearerToken': { en: 'Bearer Token', he: 'Bearer Token' },
-  'settings.bearerToken.placeholder': { en: 'Enter your Easymaze Bearer token', he: 'הזן את ה-Bearer token של Easymaze' },
-  'settings.show': { en: 'Show', he: 'הצג' },
-  'settings.hide': { en: 'Hide', he: 'הסתר' },
-  'settings.corsProxy': { en: 'CORS Proxy URL', he: 'כתובת CORS Proxy' },
-  'settings.corsProxy.note': { en: '(optional, for dev/testing)', he: '(אופציונלי, לפיתוח/בדיקות)' },
-  'settings.customerId': { en: 'Default Customer ID', he: 'מזהה לקוח ברירת מחדל' },
-  'settings.customerId.desc': { en: 'Easymaze customer entity ID', he: 'מזהה ישות לקוח ב-Easymaze' },
-  'settings.contactId': { en: 'Default Contact ID', he: 'מזהה איש קשר ברירת מחדל' },
-  'settings.contactId.desc': { en: 'Easymaze contact entity ID', he: 'מזהה ישות איש קשר ב-Easymaze' },
-  'settings.serviceArea': { en: 'Service Area', he: 'תחום שירות' },
-  'settings.serviceArea.desc': { en: 'option_set value for service_area', he: 'ערך option_set עבור service_area' },
-  'settings.serviceType': { en: 'Service Type', he: 'סוג שירות' },
-  'settings.serviceType.desc': { en: 'option_set value for service_type', he: 'ערך option_set עבור service_type' },
-  'settings.enableIntegration': { en: 'Enable Integration', he: 'הפעל חיבור' },
-  'settings.enableIntegration.desc': { en: 'Create service on every execution', he: 'צור שירות בכל הרצה' },
-  'settings.debugMode': { en: 'Debug Mode', he: 'מצב דיבאג' },
-  'settings.debugMode.desc': { en: 'Log full API request/response payloads', he: 'רשום את כל בקשות/תגובות ה-API' },
-  'settings.testConnection': { en: 'Test Connection', he: 'בדיקת חיבור' },
-  'settings.testing': { en: 'Testing...', he: 'בודק...' },
-  'settings.save': { en: 'Save Settings', he: 'שמור הגדרות' },
-  'settings.saved': { en: 'Saved', he: 'נשמר' },
-  'settings.reset': { en: 'Reset to Defaults', he: 'אפס לברירת מחדל' },
+  // ── DriverU ──
+  'driverU.payload': { en: 'DriverU Payload', he: 'מטען DriverU' },
+  'driverU.desc': { en: 'JSON payload to be sent to DriverU when integration is active.', he: 'מטען JSON שיישלח ל-DriverU כשהאינטגרציה פעילה.' },
+  'driverU.empty': { en: 'No payload available.', he: 'אין מטען זמין.' },
+  'driverU.empty.desc': { en: 'The payload will appear here once the flow completes.', he: 'המטען יופיע כאן לאחר השלמת הזרימה.' },
+  'driverU.copy': { en: 'Copy', he: 'העתק' },
 
   // ── Scenario Builder ──
   'builder.fundType': { en: 'Fund Type', he: 'סוג קופה' },
@@ -84,7 +65,6 @@ const translations = {
   'executions.sla': { en: 'SLA', he: 'SLA' },
   'executions.launched': { en: 'Launched', he: 'הושק' },
   'executions.action': { en: 'Action', he: 'פעולה' },
-  'executions.sync': { en: 'Sync', he: 'סנכרון' },
   'executions.noMatch': { en: 'No executions match your filters.', he: 'אין הרצות התואמות לסינון.' },
   'executions.clearFilters': { en: 'Clear filters', he: 'נקה סינון' },
 
@@ -115,13 +95,8 @@ const translations = {
   'detail.priority': { en: 'Priority', he: 'עדיפות' },
   'detail.slaDeadline': { en: 'SLA Deadline', he: 'מועד SLA' },
   'detail.status': { en: 'Status', he: 'סטטוס' },
-  'detail.easymaze': { en: 'Easymaze', he: 'Easymaze' },
-  'detail.synced': { en: 'Synced', he: 'מסונכרן' },
-  'detail.failed': { en: 'Failed', he: 'נכשל' },
-  'detail.openService': { en: 'Open Service in Easymaze', he: 'פתח שירות ב-Easymaze' },
-  'detail.apiLogs': { en: 'API Logs', he: 'לוגי API' },
+  'detail.driverUPayload': { en: 'DriverU Payload', he: 'מטען DriverU' },
   'detail.flowExecution': { en: 'Flow Execution', he: 'הרצת זרימה' },
-  'detail.apiCallLog': { en: 'API Call Log for', he: 'לוג קריאות API עבור' },
 
   // ── Dashboard ──
   'dashboard.empty.title': { en: 'No data yet', he: 'אין נתונים עדיין' },
@@ -308,18 +283,6 @@ const translations = {
   'audit.result': { en: 'Result', he: 'תוצאה' },
   'audit.details': { en: 'Details', he: 'פרטים' },
 
-  // ── API Logs Panel ──
-  'apiLogs.empty': { en: 'No API calls recorded yet.', he: 'לא נרשמו קריאות API עדיין.' },
-  'apiLogs.empty.desc': { en: 'API calls will appear here as the flow executes.', he: 'קריאות API יופיעו כאן במהלך הרצת הזרימה.' },
-  'apiLogs.totalCalls': { en: 'total calls', he: 'סה"כ קריאות' },
-  'apiLogs.real': { en: 'real', he: 'אמיתי' },
-  'apiLogs.mock': { en: 'mock', he: 'מדומה' },
-  'apiLogs.failed': { en: 'failed', he: 'נכשל' },
-  'apiLogs.networkError': { en: 'Network Error', he: 'שגיאת רשת' },
-  'apiLogs.noData': { en: 'No data', he: 'אין נתונים' },
-  'apiLogs.requestHeaders': { en: 'Request Headers', he: 'כותרות בקשה' },
-  'apiLogs.requestBody': { en: 'Request Body', he: 'גוף בקשה' },
-  'apiLogs.responseBody': { en: 'Response Body', he: 'גוף תגובה' },
 
   // ── Categories ──
   'cat.identity': { en: 'identity', he: 'זהות' },

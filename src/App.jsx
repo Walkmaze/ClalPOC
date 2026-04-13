@@ -8,7 +8,6 @@ import { useT } from './i18n'
 import { generateMemberData, generateContract, generateRegulations, FUND_TYPES, USE_CASES, getUseCaseLabel } from './dataGenerators'
 import { callClaude } from './claudeApi'
 import { executeValidation, determineOutcome } from './validationEngine'
-import { loadSettings, saveSettings, createEasymazeService } from './easymazeApi'
 import { generateBulkScenarios } from './bulkGenerator'
 
 function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min }
@@ -240,11 +239,6 @@ function _REMOVED_generateDemoExecutions() {
         })),
         ...(d.outcome ? [{ action: 'Outcome determination', category: 'system', source: '—', result: d.outcome.type === 'approved' ? 'SUCCESS' : d.outcome.type === 'blocked' ? 'FAIL' : 'WARNING', details: d.outcome.message, timestamp: new Date(ts.getTime() + (d.validations.length + 1) * 2000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }] : []),
       ],
-      apiLogs: [],
-      easymazeStatus: null,
-      easymazeServiceId: null,
-      easymazeServiceNumber: null,
-      easymazeError: null,
       error: null,
     }
   })
@@ -264,17 +258,8 @@ export default function App() {
   const [isLaunching, setIsLaunching] = useState(false)
 
   const [executions, setExecutions] = useState([])
-  const [emSettings, setEmSettings] = useState(() => loadSettings())
   const abortRefs = useRef({})
   const hitlResolvers = useRef({})
-
-  const handleSetEmSettings = useCallback((updater) => {
-    setEmSettings(prev => {
-      const next = typeof updater === 'function' ? updater(prev) : updater
-      saveSettings(next)
-      return next
-    })
-  }, [])
 
   const handleSetApiKey = useCallback((key) => {
     setApiKey(key)
@@ -321,60 +306,8 @@ export default function App() {
       { icon: '🧠', text: `Determining required validation steps for ${ucLabel}...`, textHe: `קובע שלבי בדיקה נדרשים עבור ${ucLabelHe}...` },
     ]
 
-    const addApiLog = (logEntry) => {
-      setExecutions(prev => prev.map(ex =>
-        ex.id === execId
-          ? { ...ex, apiLogs: [...(ex.apiLogs || []), logEntry] }
-          : ex
-      ))
-    }
-
-    const tryEasymaze = async (phase) => {
-      // Get latest execution state for description
-      const latestExec = await new Promise(resolve => {
-        setExecutions(prev => {
-          const ex = prev.find(e => e.id === execId)
-          resolve(ex)
-          return prev
-        })
-      })
-      if (!latestExec) return
-
-      const result = await createEasymazeService(latestExec, emSettings, phase)
-      if (result.skipped) return
-
-      if (result.logEntry) addApiLog(result.logEntry)
-
-      if (result.success) {
-        if (phase === 'launch' && result.serviceNumber) {
-          updateExecution(execId, { easymazeServiceId: result.serviceId, easymazeServiceNumber: result.serviceNumber, easymazeStatus: 'synced' })
-        } else if (phase === 'launch') {
-          updateExecution(execId, { easymazeStatus: 'synced' })
-        }
-        addAudit({
-          action: phase === 'launch' ? 'Create Easymaze Service' : 'Update Easymaze Service',
-          category: 'integration',
-          source: '—',
-          result: 'SUCCESS',
-          details: result.serviceNumber ? `Service #${result.serviceNumber} created` : 'Service record created',
-        })
-      } else {
-        updateExecution(execId, { easymazeStatus: 'failed', easymazeError: result.error })
-        addAudit({
-          action: phase === 'launch' ? 'Create Easymaze Service' : 'Update Easymaze Service',
-          category: 'integration',
-          source: '—',
-          result: 'FAIL',
-          details: result.error || 'API call failed',
-        })
-      }
-    }
-
     updateExecution(execId, { analysisMessages: [] })
     addAudit({ action: 'Request intake', actionHe: 'קליטת בקשה', category: 'system', source: '—', result: 'SUCCESS', details: `${ucIcon} ${ucLabel} — Process initiated`, detailsHe: `${ucIcon} ${ucLabelHe} — התהליך החל` })
-
-    // Easymaze: Create service on launch
-    tryEasymaze('launch')
 
     for (let i = 0; i < messages.length; i++) {
       if (abortRefs.current[execId]) return
@@ -563,8 +496,6 @@ export default function App() {
           status: 'REJECTED',
         })
         addAudit({ action: 'Outcome determination', actionHe: 'קביעת תוצאה', category: 'system', source: '—', result: 'FAIL', details: 'Flow terminated by human rejection', detailsHe: 'הזרימה הופסקה עקב דחייה אנושית' })
-        await delay(200)
-        tryEasymaze('completion')
         return
       }
 
@@ -602,10 +533,7 @@ export default function App() {
       detailsHe: finalOutcome.messageHe || finalOutcome.message,
     })
 
-    // Easymaze: Update service on completion
-    await delay(200)
-    tryEasymaze('completion')
-  }, [apiKey, updateExecution, emSettings])
+  }, [apiKey, updateExecution])
 
   const handleLaunch = useCallback(() => {
     if (!memberData || !apiKey || !contract) return
@@ -641,11 +569,6 @@ export default function App() {
       validationResults: [],
       outcome: null,
       auditEntries: [],
-      apiLogs: [],
-      easymazeStatus: null,
-      easymazeServiceId: null,
-      easymazeServiceNumber: null,
-      easymazeError: null,
       error: null,
     }
 
@@ -858,9 +781,6 @@ export default function App() {
               }`}
             >
               ⚙ {t('header.settings')}
-              {emSettings.enabled && (
-                <span className="ms-1.5 w-1.5 h-1.5 inline-block rounded-full bg-success" />
-              )}
             </button>
           </nav>
         </div>
@@ -909,7 +829,7 @@ export default function App() {
         )}
 
         {activeTab === 'settings' && (
-          <SettingsPanel settings={emSettings} setSettings={handleSetEmSettings} />
+          <SettingsPanel />
         )}
 
         {activeTab === 'executions' && !selectedExecutionId && (
