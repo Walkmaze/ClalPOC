@@ -19,8 +19,10 @@ Return ONLY a JSON array of validation objects. No other text. No markdown. No c
 Each validation object must have:
 {
   "id": "val_001",
-  "name": "Short name (e.g. 'Age verification')",
-  "description": "What this check does",
+  "name": "Short name in English (e.g. 'Age verification')",
+  "nameHe": "Short name in Hebrew (e.g. 'אימות גיל')",
+  "description": "What this check does in English",
+  "descriptionHe": "What this check does in Hebrew",
   "category": "identity" | "eligibility" | "financial" | "regulatory" | "contract",
   "rule": "The specific condition being checked (e.g. 'age >= 67 for male members')",
   "field": "The input field being checked (must match a key in member data)",
@@ -30,14 +32,19 @@ Each validation object must have:
   "requires_hitl": false
 }
 
+IMPORTANT: Every validation MUST include both English and Hebrew fields (name/nameHe, description/descriptionHe). Use professional Hebrew insurance terminology.
+
 For validations that require human review (based on contract clauses with consequence "require_hitl", or regulatory requirements that mandate human oversight), set:
 - "requires_hitl": true
-- "hitl_reason": why human intervention is needed
+- "hitl_reason": why human intervention is needed (English)
+- "hitl_reasonHe": why human intervention is needed (Hebrew)
 - "hitl_steps": an array of 2-4 sequential review steps, each with:
   - "step_id": unique identifier (e.g. "hitl_1")
-  - "title": short step name
-  - "description": what the human needs to do
-  - "fields": array of form fields with name, type (text/textarea/select/number/date/checkbox), label, and options (for select type)
+  - "title": short step name (English)
+  - "titleHe": short step name (Hebrew)
+  - "description": what the human needs to do (English)
+  - "descriptionHe": what the human needs to do (Hebrew)
+  - "fields": array of form fields with name, type (text/textarea/select/number/date/checkbox), label, labelHe, and options (for select type)
 
 Design the HITL steps to be logical and progressive:
 - Step 1: Usually verification/data gathering

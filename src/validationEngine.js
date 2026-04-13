@@ -35,7 +35,7 @@ export function executeValidation(validation, memberData) {
     const owner = memberData.account_owner || ''
     const memberName = memberData.member_name || ''
     const passed = owner.toLowerCase() === memberName.toLowerCase()
-    return { passed, actual_value: owner, message: `Account owner "${owner}" ${passed ? 'matches' : 'does not match'} member "${memberName}"` }
+    return { passed, actual_value: owner, message: `Account owner "${owner}" ${passed ? 'matches' : 'does not match'} member "${memberName}"`, messageHe: `בעל חשבון "${owner}" ${passed ? 'תואם' : 'אינו תואם'} לחבר "${memberName}"` }
   }
 
   // Age-based checks
@@ -45,9 +45,9 @@ export function executeValidation(validation, memberData) {
     if (threshold !== null) {
       const isUnder = ruleLower.includes('under') || (ruleLower.includes('<') && !ruleLower.includes('>='))
       const passed = isUnder ? age < threshold : age >= threshold
-      return { passed, actual_value: age, message: `Member age is ${age}, required ${expected}` }
+      return { passed, actual_value: age, message: `Member age is ${age}, required ${expected}`, messageHe: `גיל החבר הוא ${age}, נדרש ${expected}` }
     }
-    return { passed: true, actual_value: age, message: `Age: ${age}` }
+    return { passed: true, actual_value: age, message: `Age: ${age}`, messageHe: `גיל: ${age}` }
   }
 
   // ID photo confidence
@@ -56,29 +56,29 @@ export function executeValidation(validation, memberData) {
     const threshold = extractNumber(expected) || extractNumber(rule)
     if (threshold !== null) {
       const passed = confidence >= threshold
-      return { passed, actual_value: `${confidence}%`, message: `Confidence ${confidence}% ${passed ? '≥' : '<'} required ${threshold}%` }
+      return { passed, actual_value: `${confidence}%`, message: `Confidence ${confidence}% ${passed ? '≥' : '<'} required ${threshold}%`, messageHe: `רמת ודאות ${confidence}% ${passed ? '≥' : '<'} נדרש ${threshold}%` }
     }
-    return { passed: confidence >= 85, actual_value: `${confidence}%`, message: `Confidence: ${confidence}%` }
+    return { passed: confidence >= 85, actual_value: `${confidence}%`, message: `Confidence: ${confidence}%`, messageHe: `רמת ודאות: ${confidence}%` }
   }
 
   // Withdrawal amount checks
   if (field === 'withdrawal_amount' || (ruleLower.includes('withdrawal_amount') || ruleLower.includes('withdrawal amount'))) {
     const amount = memberData.withdrawal_amount
-    if (amount === undefined) return { passed: true, actual_value: 'N/A', message: 'No withdrawal amount (not a withdrawal request)' }
+    if (amount === undefined) return { passed: true, actual_value: 'N/A', message: 'No withdrawal amount (not a withdrawal request)', messageHe: 'אין סכום משיכה (לא בקשת משיכה)' }
     const threshold = extractNumber(expected) || extractNumber(rule)
     if (threshold !== null) {
       const isMax = ruleLower.includes('<=') || ruleLower.includes('below') || ruleLower.includes('not exceed') || ruleLower.includes('maximum') || expectedLower.includes('<=')
       const isMin = ruleLower.includes('>=') || ruleLower.includes('minimum') || ruleLower.includes('at least') || expectedLower.includes('>=')
       if (isMax) {
         const passed = amount <= threshold
-        return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Amount ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} limit ₪${threshold.toLocaleString()}` }
+        return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Amount ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} limit ₪${threshold.toLocaleString()}`, messageHe: `סכום ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} מגבלה ₪${threshold.toLocaleString()}` }
       }
       if (isMin) {
         const passed = amount >= threshold
-        return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Amount ₪${amount.toLocaleString()} ${passed ? '≥' : '<'} minimum ₪${threshold.toLocaleString()}` }
+        return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Amount ₪${amount.toLocaleString()} ${passed ? '≥' : '<'} minimum ₪${threshold.toLocaleString()}`, messageHe: `סכום ₪${amount.toLocaleString()} ${passed ? '≥' : '<'} מינימום ₪${threshold.toLocaleString()}` }
       }
     }
-    return { passed: true, actual_value: `₪${amount.toLocaleString()}`, message: `Amount: ₪${amount.toLocaleString()}` }
+    return { passed: true, actual_value: `₪${amount.toLocaleString()}`, message: `Amount: ₪${amount.toLocaleString()}`, messageHe: `סכום: ₪${amount.toLocaleString()}` }
   }
 
   // Transfer amount checks
@@ -89,10 +89,10 @@ export function executeValidation(validation, memberData) {
       const isMax = ruleLower.includes('<=') || ruleLower.includes('below') || ruleLower.includes('maximum') || expectedLower.includes('<=')
       if (isMax) {
         const passed = amount <= threshold
-        return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Transfer ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} limit ₪${threshold.toLocaleString()}` }
+        return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Transfer ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} limit ₪${threshold.toLocaleString()}`, messageHe: `העברה ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} מגבלה ₪${threshold.toLocaleString()}` }
       }
     }
-    return { passed: true, actual_value: `₪${amount.toLocaleString()}`, message: `Transfer amount: ₪${amount.toLocaleString()}` }
+    return { passed: true, actual_value: `₪${amount.toLocaleString()}`, message: `Transfer amount: ₪${amount.toLocaleString()}`, messageHe: `סכום העברה: ₪${amount.toLocaleString()}` }
   }
 
   // Rebalance amount
@@ -101,9 +101,9 @@ export function executeValidation(validation, memberData) {
     const threshold = extractNumber(expected) || extractNumber(rule)
     if (threshold !== null) {
       const passed = amount <= threshold
-      return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Rebalance ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} limit ₪${threshold.toLocaleString()}` }
+      return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Rebalance ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} limit ₪${threshold.toLocaleString()}`, messageHe: `איזון מחדש ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} מגבלה ₪${threshold.toLocaleString()}` }
     }
-    return { passed: true, actual_value: `₪${amount.toLocaleString()}`, message: `Rebalance amount: ₪${amount.toLocaleString()}` }
+    return { passed: true, actual_value: `₪${amount.toLocaleString()}`, message: `Rebalance amount: ₪${amount.toLocaleString()}`, messageHe: `סכום איזון מחדש: ₪${amount.toLocaleString()}` }
   }
 
   // Redemption amount
@@ -115,14 +115,14 @@ export function executeValidation(validation, memberData) {
       const isMin = ruleLower.includes('>=') || ruleLower.includes('minimum') || expectedLower.includes('>=')
       if (isMax) {
         const passed = amount <= threshold
-        return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Redemption ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} limit ₪${threshold.toLocaleString()}` }
+        return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Redemption ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} limit ₪${threshold.toLocaleString()}`, messageHe: `פדיון ₪${amount.toLocaleString()} ${passed ? '≤' : '>'} מגבלה ₪${threshold.toLocaleString()}` }
       }
       if (isMin) {
         const passed = amount >= threshold
-        return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Redemption ₪${amount.toLocaleString()} ${passed ? '≥' : '<'} minimum ₪${threshold.toLocaleString()}` }
+        return { passed, actual_value: `₪${amount.toLocaleString()}`, message: `Redemption ₪${amount.toLocaleString()} ${passed ? '≥' : '<'} minimum ₪${threshold.toLocaleString()}`, messageHe: `פדיון ₪${amount.toLocaleString()} ${passed ? '≥' : '<'} מינימום ₪${threshold.toLocaleString()}` }
       }
     }
-    return { passed: true, actual_value: `₪${amount.toLocaleString()}`, message: `Redemption amount: ₪${amount.toLocaleString()}` }
+    return { passed: true, actual_value: `₪${amount.toLocaleString()}`, message: `Redemption amount: ₪${amount.toLocaleString()}`, messageHe: `סכום פדיון: ₪${amount.toLocaleString()}` }
   }
 
   // Transfer percentage
@@ -131,9 +131,9 @@ export function executeValidation(validation, memberData) {
     const threshold = extractNumber(expected) || extractNumber(rule)
     if (threshold !== null) {
       const passed = pct <= threshold
-      return { passed, actual_value: `${pct}%`, message: `Transfer ${pct}% ${passed ? '≤' : '>'} limit ${threshold}%` }
+      return { passed, actual_value: `${pct}%`, message: `Transfer ${pct}% ${passed ? '≤' : '>'} limit ${threshold}%`, messageHe: `העברה ${pct}% ${passed ? '≤' : '>'} מגבלה ${threshold}%` }
     }
-    return { passed: true, actual_value: `${pct}%`, message: `Transfer percentage: ${pct}%` }
+    return { passed: true, actual_value: `${pct}%`, message: `Transfer percentage: ${pct}%`, messageHe: `אחוז העברה: ${pct}%` }
   }
 
   // Allocation shift (rebalance)
@@ -143,7 +143,7 @@ export function executeValidation(validation, memberData) {
     const shift = Math.abs(targetPct - currentPct)
     const threshold = extractNumber(expected) || extractNumber(rule) || 20
     const passed = shift <= threshold
-    return { passed, actual_value: `${shift}%`, message: `Allocation shift ${shift}% ${passed ? '≤' : '>'} max ${threshold}%` }
+    return { passed, actual_value: `${shift}%`, message: `Allocation shift ${shift}% ${passed ? '≤' : '>'} max ${threshold}%`, messageHe: `שינוי הקצאה ${shift}% ${passed ? '≤' : '>'} מקסימום ${threshold}%` }
   }
 
   // Balance checks
@@ -156,14 +156,14 @@ export function executeValidation(validation, memberData) {
       if (threshold !== null) {
         const isFullWithdrawal = remaining === 0
         const passed = remaining >= threshold || isFullWithdrawal
-        return { passed, actual_value: `₪${remaining.toLocaleString()}`, message: `Remaining ₪${remaining.toLocaleString()} ${passed ? (isFullWithdrawal ? '(full withdrawal)' : '≥') : '<'} ${isFullWithdrawal ? '' : `minimum ₪${threshold.toLocaleString()}`}` }
+        return { passed, actual_value: `₪${remaining.toLocaleString()}`, message: `Remaining ₪${remaining.toLocaleString()} ${passed ? (isFullWithdrawal ? '(full withdrawal)' : '≥') : '<'} ${isFullWithdrawal ? '' : `minimum ₪${threshold.toLocaleString()}`}`, messageHe: `נותר ₪${remaining.toLocaleString()} ${passed ? (isFullWithdrawal ? '(משיכה מלאה)' : '≥') : '<'} ${isFullWithdrawal ? '' : `מינימום ₪${threshold.toLocaleString()}`}` }
       }
     }
     if (threshold !== null) {
       const passed = balance >= threshold
-      return { passed, actual_value: `₪${balance.toLocaleString()}`, message: `Balance: ₪${balance.toLocaleString()} ${passed ? '≥' : '<'} ₪${threshold.toLocaleString()}` }
+      return { passed, actual_value: `₪${balance.toLocaleString()}`, message: `Balance: ₪${balance.toLocaleString()} ${passed ? '≥' : '<'} ₪${threshold.toLocaleString()}`, messageHe: `יתרה: ₪${balance.toLocaleString()} ${passed ? '≥' : '<'} ₪${threshold.toLocaleString()}` }
     }
-    return { passed: balance > 0, actual_value: `₪${balance.toLocaleString()}`, message: `Balance: ₪${balance.toLocaleString()}` }
+    return { passed: balance > 0, actual_value: `₪${balance.toLocaleString()}`, message: `Balance: ₪${balance.toLocaleString()}`, messageHe: `יתרה: ₪${balance.toLocaleString()}` }
   }
 
   // Holding period / start date
@@ -172,9 +172,9 @@ export function executeValidation(validation, memberData) {
       const months = monthsBetween(memberData.start_date, new Date().toISOString().split('T')[0])
       const required = memberData.policy_minimum_holding_months || extractNumber(expected) || extractNumber(rule) || 12
       const passed = months >= required
-      return { passed, actual_value: `${months} months`, message: `Holding period ${months} months ${passed ? '≥' : '<'} required ${required} months` }
+      return { passed, actual_value: `${months} months`, message: `Holding period ${months} months ${passed ? '≥' : '<'} required ${required} months`, messageHe: `תקופת החזקה ${months} חודשים ${passed ? '≥' : '<'} נדרש ${required} חודשים` }
     }
-    return { passed: true, actual_value: 'N/A', message: 'No start date applicable' }
+    return { passed: true, actual_value: 'N/A', message: 'No start date applicable', messageHe: 'לא רלוונטי — אין תאריך התחלה' }
   }
 
   // Liquidity date
@@ -183,23 +183,23 @@ export function executeValidation(validation, memberData) {
       const today = new Date()
       const liqDate = new Date(memberData.liquidity_date)
       const passed = liqDate <= today
-      return { passed, actual_value: memberData.liquidity_date, message: `Liquidity date ${memberData.liquidity_date} ${passed ? 'has passed' : 'is in the future'}` }
+      return { passed, actual_value: memberData.liquidity_date, message: `Liquidity date ${memberData.liquidity_date} ${passed ? 'has passed' : 'is in the future'}`, messageHe: `תאריך נזילות ${memberData.liquidity_date} ${passed ? 'עבר' : 'בעתיד'}` }
     }
-    return { passed: true, actual_value: 'N/A', message: 'No liquidity date applicable' }
+    return { passed: true, actual_value: 'N/A', message: 'No liquidity date applicable', messageHe: 'לא רלוונטי — אין תאריך נזילות' }
   }
 
   // Early withdrawal allowed
   if (field === 'early_withdrawal_allowed' || (ruleLower.includes('early withdrawal') && !ruleLower.includes('tax') && !ruleLower.includes('fee'))) {
     if (memberData.early_withdrawal_allowed !== undefined) {
       const passed = memberData.early_withdrawal_allowed === true
-      return { passed, actual_value: String(memberData.early_withdrawal_allowed), message: `Early withdrawal ${passed ? 'is' : 'is not'} allowed` }
+      return { passed, actual_value: String(memberData.early_withdrawal_allowed), message: `Early withdrawal ${passed ? 'is' : 'is not'} allowed`, messageHe: `משיכה מוקדמת ${passed ? 'מותרת' : 'אינה מותרת'}` }
     }
-    return { passed: true, actual_value: 'N/A', message: 'Not applicable' }
+    return { passed: true, actual_value: 'N/A', message: 'Not applicable', messageHe: 'לא רלוונטי' }
   }
 
   // Gender
   if (field === 'gender' || ruleLower.includes('gender')) {
-    return { passed: true, actual_value: memberData.gender || 'N/A', message: `Gender: ${memberData.gender || 'N/A'}` }
+    return { passed: true, actual_value: memberData.gender || 'N/A', message: `Gender: ${memberData.gender || 'N/A'}`, messageHe: `מין: ${memberData.gender === 'female' ? 'נקבה' : memberData.gender === 'male' ? 'זכר' : memberData.gender || 'לא זמין'}` }
   }
 
   // Track deviation (study fund)
@@ -210,9 +210,9 @@ export function executeValidation(validation, memberData) {
       const deviation = Math.abs(generalPct - 50)
       const threshold = extractNumber(expected) || extractNumber(rule) || 10
       const passed = deviation <= threshold
-      return { passed, actual_value: `${deviation.toFixed(1)}%`, message: `Track deviation ${deviation.toFixed(1)}% ${passed ? '≤' : '>'} max ${threshold}%` }
+      return { passed, actual_value: `${deviation.toFixed(1)}%`, message: `Track deviation ${deviation.toFixed(1)}% ${passed ? '≤' : '>'} max ${threshold}%`, messageHe: `סטיית מסלול ${deviation.toFixed(1)}% ${passed ? '≤' : '>'} מקסימום ${threshold}%` }
     }
-    return { passed: true, actual_value: 'N/A', message: 'Single track fund' }
+    return { passed: true, actual_value: 'N/A', message: 'Single track fund', messageHe: 'קרן במסלול יחיד' }
   }
 
   // Beneficiary percentage validation
@@ -220,31 +220,31 @@ export function executeValidation(validation, memberData) {
     const beneficiaries = memberData.new_beneficiaries || []
     const total = beneficiaries.reduce((sum, b) => sum + (b.percentage || 0), 0)
     const passed = total === 100
-    return { passed, actual_value: `${total}%`, message: `Beneficiary allocation: ${total}% ${passed ? '= 100%' : '≠ 100%'}` }
+    return { passed, actual_value: `${total}%`, message: `Beneficiary allocation: ${total}% ${passed ? '= 100%' : '≠ 100%'}`, messageHe: `הקצאת מוטבים: ${total}% ${passed ? '= 100%' : '≠ 100%'}` }
   }
 
   // Notary verification
   if (field === 'notary_verified' || ruleLower.includes('notary') || ruleLower.includes('notarized')) {
     const verified = memberData.notary_verified === true
-    return { passed: verified, actual_value: String(verified), message: `Notary verification: ${verified ? 'Verified' : 'Not verified'}` }
+    return { passed: verified, actual_value: String(verified), message: `Notary verification: ${verified ? 'Verified' : 'Not verified'}`, messageHe: `אימות נוטריון: ${verified ? 'מאומת' : 'לא מאומת'}` }
   }
 
   // Beneficiary consent
   if (field === 'beneficiary_consent_obtained' || ruleLower.includes('beneficiary consent') || ruleLower.includes('existing beneficiar')) {
     const obtained = memberData.beneficiary_consent_obtained === true
-    return { passed: obtained, actual_value: String(obtained), message: `Beneficiary consent: ${obtained ? 'Obtained' : 'Not obtained'}` }
+    return { passed: obtained, actual_value: String(obtained), message: `Beneficiary consent: ${obtained ? 'Obtained' : 'Not obtained'}`, messageHe: `הסכמת מוטבים: ${obtained ? 'התקבלה' : 'לא התקבלה'}` }
   }
 
   // Employer approval
   if (field === 'employer_approval_received' || ruleLower.includes('employer approval') || ruleLower.includes('previous employer')) {
     const approved = memberData.employer_approval_received === true
-    return { passed: approved, actual_value: String(approved), message: `Employer approval: ${approved ? 'Received' : 'Not received'}` }
+    return { passed: approved, actual_value: String(approved), message: `Employer approval: ${approved ? 'Received' : 'Not received'}`, messageHe: `אישור מעסיק: ${approved ? 'התקבל' : 'לא התקבל'}` }
   }
 
   // Employer notified
   if (field === 'employer_notified' || ruleLower.includes('employer notif') || ruleLower.includes('employer must be notified')) {
     const notified = memberData.employer_notified === true
-    return { passed: notified, actual_value: String(notified), message: `Employer notification: ${notified ? 'Sent' : 'Not sent'}` }
+    return { passed: notified, actual_value: String(notified), message: `Employer notification: ${notified ? 'Sent' : 'Not sent'}`, messageHe: `הודעה למעסיק: ${notified ? 'נשלחה' : 'לא נשלחה'}` }
   }
 
   // Employment gap days
@@ -256,25 +256,25 @@ export function executeValidation(validation, memberData) {
     )
     const threshold = extractNumber(expected) || extractNumber(rule) || 45
     const passed = gap <= threshold
-    return { passed, actual_value: `${gap} days`, message: `Employment gap ${gap} days ${passed ? '≤' : '>'} limit ${threshold} days` }
+    return { passed, actual_value: `${gap} days`, message: `Employment gap ${gap} days ${passed ? '≤' : '>'} limit ${threshold} days`, messageHe: `פער העסקה ${gap} ימים ${passed ? '≤' : '>'} מגבלת ${threshold} ימים` }
   }
 
   // Continuous employment
   if (field === 'continuous_employment' || ruleLower.includes('continuous employment') || ruleLower.includes('continuity')) {
     const continuous = memberData.continuous_employment === true
-    return { passed: continuous, actual_value: String(continuous), message: `Continuous employment: ${continuous ? 'Yes' : 'No'}` }
+    return { passed: continuous, actual_value: String(continuous), message: `Continuous employment: ${continuous ? 'Yes' : 'No'}`, messageHe: `רציפות העסקה: ${continuous ? 'כן' : 'לא'}` }
   }
 
   // Severance included
   if (field === 'severance_included' || ruleLower.includes('severance')) {
     const included = memberData.severance_included === true
-    return { passed: true, actual_value: String(included), message: `Severance included: ${included ? 'Yes' : 'No'}` }
+    return { passed: true, actual_value: String(included), message: `Severance included: ${included ? 'Yes' : 'No'}`, messageHe: `פיצויים כלולים: ${included ? 'כן' : 'לא'}` }
   }
 
   // Supporting documents
   if (field === 'supporting_documents' || ruleLower.includes('supporting document') || ruleLower.includes('documentation')) {
     const hasDocs = memberData.supporting_documents === true
-    return { passed: hasDocs, actual_value: String(hasDocs), message: `Supporting documents: ${hasDocs ? 'Provided' : 'Missing'}` }
+    return { passed: hasDocs, actual_value: String(hasDocs), message: `Supporting documents: ${hasDocs ? 'Provided' : 'Missing'}`, messageHe: `מסמכים תומכים: ${hasDocs ? 'סופקו' : 'חסרים'}` }
   }
 
   // Redemption reason
@@ -282,7 +282,7 @@ export function executeValidation(validation, memberData) {
     const reason = memberData.redemption_reason || 'Not specified'
     const validReasons = ['Financial hardship', 'Educational expense', 'Medical expense']
     const isValid = validReasons.some(r => reason.toLowerCase().includes(r.toLowerCase()))
-    return { passed: isValid, actual_value: reason, message: `Reason "${reason}" ${isValid ? 'is a qualifying reason' : 'is not a qualifying reason'}` }
+    return { passed: isValid, actual_value: reason, message: `Reason "${reason}" ${isValid ? 'is a qualifying reason' : 'is not a qualifying reason'}`, messageHe: `סיבה "${reason}" ${isValid ? 'היא סיבה מזכה' : 'אינה סיבה מזכה'}` }
   }
 
   // Tax reporting
@@ -290,7 +290,7 @@ export function executeValidation(validation, memberData) {
     const amount = memberData.withdrawal_amount || memberData.redemption_amount || 0
     const threshold = extractNumber(expected) || extractNumber(rule) || 50000
     const triggered = amount > threshold
-    return { passed: true, actual_value: triggered ? 'Triggered' : 'Not triggered', message: `Tax reporting ${triggered ? 'required' : 'not required'} (₪${amount.toLocaleString()} ${triggered ? '>' : '≤'} ₪${threshold.toLocaleString()})` }
+    return { passed: true, actual_value: triggered ? 'Triggered' : 'Not triggered', message: `Tax reporting ${triggered ? 'required' : 'not required'} (₪${amount.toLocaleString()} ${triggered ? '>' : '≤'} ₪${threshold.toLocaleString()})`, messageHe: `דיווח מס ${triggered ? 'נדרש' : 'לא נדרש'} (₪${amount.toLocaleString()} ${triggered ? '>' : '≤'} ₪${threshold.toLocaleString()})` }
   }
 
   // Weekend/day check
@@ -300,15 +300,15 @@ export function executeValidation(validation, memberData) {
     const hour = now.getHours()
     if (ruleLower.includes('market hours')) {
       const inHours = hour >= 9 && hour < 18
-      return { passed: inHours, actual_value: `${hour}:00`, message: inHours ? 'Within market hours' : 'Outside market hours — request will be queued' }
+      return { passed: inHours, actual_value: `${hour}:00`, message: inHours ? 'Within market hours' : 'Outside market hours — request will be queued', messageHe: inHours ? 'בתוך שעות המסחר' : 'מחוץ לשעות המסחר — הבקשה תיכנס לתור' }
     }
     const isWeekend = day === 5 || day === 6
-    return { passed: !isWeekend, actual_value: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day], message: isWeekend ? 'Request submitted on weekend — will be held' : 'Request on business day' }
+    return { passed: !isWeekend, actual_value: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day], message: isWeekend ? 'Request submitted on weekend — will be held' : 'Request on business day', messageHe: isWeekend ? 'בקשה הוגשה בסוף שבוע — תעוכב' : 'בקשה ביום עסקים' }
   }
 
   // Processing SLA
   if (ruleLower.includes('processing') || ruleLower.includes('sla')) {
-    return { passed: true, actual_value: 'Noted', message: 'SLA requirements acknowledged and will be tracked' }
+    return { passed: true, actual_value: 'Noted', message: 'SLA requirements acknowledged and will be tracked', messageHe: 'דרישות SLA אושרו וימעקבו' }
   }
 
   // Partial withdrawal count
@@ -316,12 +316,12 @@ export function executeValidation(validation, memberData) {
     const count = Math.floor(Math.random() * 4)
     const max = extractNumber(expected) || extractNumber(rule) || 3
     const passed = count < max
-    return { passed, actual_value: `${count} this year`, message: `${count} partial withdrawals this year ${passed ? '<' : '≥'} limit of ${max}` }
+    return { passed, actual_value: `${count} this year`, message: `${count} partial withdrawals this year ${passed ? '<' : '≥'} limit of ${max}`, messageHe: `${count} משיכות חלקיות השנה ${passed ? '<' : '≥'} מגבלת ${max}` }
   }
 
   // Employer consent (withdrawal)
   if (ruleLower.includes('employer') && ruleLower.includes('consent')) {
-    return { passed: true, actual_value: 'Pending', message: 'Employer consent status will be verified' }
+    return { passed: true, actual_value: 'Pending', message: 'Employer consent status will be verified', messageHe: 'סטטוס הסכמת מעסיק ייבדק' }
   }
 
   // AML
@@ -329,9 +329,9 @@ export function executeValidation(validation, memberData) {
     const amount = memberData.withdrawal_amount || memberData.transfer_amount || memberData.redemption_amount || 0
     const threshold = extractNumber(rule) || 50000
     if (amount > threshold) {
-      return { passed: true, actual_value: 'Review flagged', message: `Amount ₪${amount.toLocaleString()} exceeds AML threshold — flagged for review` }
+      return { passed: true, actual_value: 'Review flagged', message: `Amount ₪${amount.toLocaleString()} exceeds AML threshold — flagged for review`, messageHe: `סכום ₪${amount.toLocaleString()} חורג מסף הלבנת הון — סומן לבדיקה` }
     }
-    return { passed: true, actual_value: 'Clear', message: `Amount below AML threshold` }
+    return { passed: true, actual_value: 'Clear', message: `Amount below AML threshold`, messageHe: `סכום מתחת לסף הלבנת הון` }
   }
 
   // Guardian/minor check
@@ -339,7 +339,7 @@ export function executeValidation(validation, memberData) {
     const age = getAge(memberData.birth_date)
     const threshold = extractNumber(rule) || 21
     const passed = age >= threshold
-    return { passed, actual_value: `Age ${age}`, message: `Member age ${age} ${passed ? '≥' : '<'} ${threshold} (guardian ${passed ? 'not required' : 'required'})` }
+    return { passed, actual_value: `Age ${age}`, message: `Member age ${age} ${passed ? '≥' : '<'} ${threshold} (guardian ${passed ? 'not required' : 'required'})`, messageHe: `גיל החבר ${age} ${passed ? '≥' : '<'} ${threshold} (אפוטרופוס ${passed ? 'לא נדרש' : 'נדרש'})` }
   }
 
   // Senior/capacity check
@@ -347,7 +347,7 @@ export function executeValidation(validation, memberData) {
     const age = getAge(memberData.birth_date)
     const threshold = extractNumber(rule) || 80
     const needsReview = age >= threshold
-    return { passed: !needsReview, actual_value: `Age ${age}`, message: `Member age ${age} ${needsReview ? '≥' : '<'} ${threshold} (capacity check ${needsReview ? 'required' : 'not required'})` }
+    return { passed: !needsReview, actual_value: `Age ${age}`, message: `Member age ${age} ${needsReview ? '≥' : '<'} ${threshold} (capacity check ${needsReview ? 'required' : 'not required'})`, messageHe: `גיל החבר ${age} ${needsReview ? '≥' : '<'} ${threshold} (בדיקת כשירות ${needsReview ? 'נדרשת' : 'לא נדרשת'})` }
   }
 
   // Annual transfer count
@@ -355,7 +355,7 @@ export function executeValidation(validation, memberData) {
     const count = Math.floor(Math.random() * 5)
     const max = extractNumber(expected) || extractNumber(rule) || 4
     const passed = count <= max
-    return { passed, actual_value: `${count} this year`, message: `${count} transfers this year ${passed ? '≤' : '>'} limit of ${max}` }
+    return { passed, actual_value: `${count} this year`, message: `${count} transfers this year ${passed ? '≤' : '>'} limit of ${max}`, messageHe: `${count} העברות השנה ${passed ? '≤' : '>'} מגבלת ${max}` }
   }
 
   // Days since last transfer/rebalance
@@ -363,7 +363,7 @@ export function executeValidation(validation, memberData) {
     const days = randDays()
     const required = extractNumber(expected) || extractNumber(rule) || 30
     const passed = days >= required
-    return { passed, actual_value: `${days} days`, message: `${days} days since last operation ${passed ? '≥' : '<'} required ${required} days` }
+    return { passed, actual_value: `${days} days`, message: `${days} days since last operation ${passed ? '≥' : '<'} required ${required} days`, messageHe: `${days} ימים מאז הפעולה האחרונה ${passed ? '≥' : '<'} נדרש ${required} ימים` }
   }
 
   // Risk profile / suitability
@@ -371,29 +371,29 @@ export function executeValidation(validation, memberData) {
     const age = getAge(memberData.birth_date)
     const isAggressive = memberData.target_track?.toLowerCase().includes('aggressive') || memberData.source_track?.toLowerCase().includes('aggressive')
     if (age >= 60 && isAggressive) {
-      return { passed: false, actual_value: `Age ${age}, aggressive track`, message: `Member age ${age} ≥ 60 with aggressive track — additional risk acknowledgment required` }
+      return { passed: false, actual_value: `Age ${age}, aggressive track`, message: `Member age ${age} ≥ 60 with aggressive track — additional risk acknowledgment required`, messageHe: `גיל החבר ${age} ≥ 60 עם מסלול אגרסיבי — נדרש אישור סיכון נוסף` }
     }
-    return { passed: true, actual_value: 'Suitable', message: 'Investment suitability check passed' }
+    return { passed: true, actual_value: 'Suitable', message: 'Investment suitability check passed', messageHe: 'בדיקת התאמת השקעה עברה בהצלחה' }
   }
 
   // Transparency / logging requirements
   if (ruleLower.includes('transparency') || ruleLower.includes('logged') || ruleLower.includes('confirmation')) {
-    return { passed: true, actual_value: 'Compliant', message: 'Transfer transparency requirements met — will be logged' }
+    return { passed: true, actual_value: 'Compliant', message: 'Transfer transparency requirements met — will be logged', messageHe: 'דרישות שקיפות העברה מולאו — יתועד' }
   }
 
   // Portability / transfer fees
   if (ruleLower.includes('portability') || ruleLower.includes('transfer fee')) {
-    return { passed: true, actual_value: 'Compliant', message: 'Fund portability rules met' }
+    return { passed: true, actual_value: 'Compliant', message: 'Fund portability rules met', messageHe: 'כללי ניידות קרן מולאו' }
   }
 
   // Document verification
   if (ruleLower.includes('document') && ruleLower.includes('verif')) {
     const hasDocs = memberData.supporting_documents === true
-    return { passed: hasDocs, actual_value: String(hasDocs), message: `Document verification: ${hasDocs ? 'Documents provided' : 'Documents pending'}` }
+    return { passed: hasDocs, actual_value: String(hasDocs), message: `Document verification: ${hasDocs ? 'Documents provided' : 'Documents pending'}`, messageHe: `אימות מסמכים: ${hasDocs ? 'מסמכים סופקו' : 'מסמכים ממתינים'}` }
   }
 
   // Default: pass with info
-  return { passed: true, actual_value: 'Verified', message: `${validation.name}: Check completed` }
+  return { passed: true, actual_value: 'Verified', message: `${validation.name}: Check completed`, messageHe: `${validation.name}: בדיקה הושלמה` }
 }
 
 function randDays() {
@@ -410,9 +410,18 @@ const USE_CASE_LABELS = {
   early_redemption: 'Early Redemption',
 }
 
+const USE_CASE_LABELS_HE = {
+  withdrawal: 'משיכה',
+  fund_transfer: 'העברה בין מסלולים',
+  beneficiary_update: 'עדכון מוטבים',
+  employer_change: 'החלפת מעסיק',
+  early_redemption: 'פדיון מוקדם',
+}
+
 export function determineOutcome(validations, results, memberData) {
   const useCase = memberData.use_case || 'withdrawal'
   const ucLabel = USE_CASE_LABELS[useCase] || 'Request'
+  const ucLabelHe = USE_CASE_LABELS_HE[useCase] || 'בקשה'
 
   const failures = validations
     .map((v, i) => ({ validation: v, result: results[i] }))
@@ -425,9 +434,9 @@ export function determineOutcome(validations, results, memberData) {
       v.severity === 'warning' && !results[i].passed
     )
     if (approvalNeeded) {
-      return { type: 'approval', message: `Human approval required for ${ucLabel.toLowerCase()}`, failures }
+      return { type: 'approval', message: `Human approval required for ${ucLabel.toLowerCase()}`, messageHe: `נדרש אישור אנושי עבור ${ucLabelHe}`, failures }
     }
-    return { type: 'approved', message: `All validations passed — auto-executing ${ucLabel.toLowerCase()}`, useCase }
+    return { type: 'approved', message: `All validations passed — auto-executing ${ucLabel.toLowerCase()}`, messageHe: `כל הבדיקות עברו בהצלחה — מבצע אוטומטית ${ucLabelHe}`, useCase }
   }
 
   // Analyze blocking failures based on use case
@@ -460,12 +469,12 @@ export function determineOutcome(validations, results, memberData) {
 
   // Identity failure — sends customer a link to upload new photo
   if (hasIdFailure) {
-    return { type: 'customer_action', subtype: 'id_photo', message: `Identity verification failed — customer must upload a valid ID photo`, failures: blockingFailures, useCase }
+    return { type: 'customer_action', subtype: 'id_photo', message: `Identity verification failed — customer must upload a valid ID photo`, messageHe: `אימות זהות נכשל — הלקוח חייב להעלות תמונת ת.ז. תקינה`, failures: blockingFailures, useCase }
   }
 
   // Bank account failure
   if (hasBankFailure) {
-    return { type: 'customer_action', subtype: 'bank_account', message: `Bank account ownership verification failed — account does not match member`, failures: blockingFailures, useCase }
+    return { type: 'customer_action', subtype: 'bank_account', message: `Bank account ownership verification failed — account does not match member`, messageHe: `אימות בעלות חשבון בנק נכשל — החשבון אינו תואם לחבר`, failures: blockingFailures, useCase }
   }
 
   // Use-case-specific outcomes
@@ -480,6 +489,7 @@ export function determineOutcome(validations, results, memberData) {
       return {
         type: 'tax_consent',
         message: 'Early withdrawal — tax and fees apply. Customer consent required.',
+        messageHe: 'משיכה מוקדמת — חל מס ועמלות. נדרשת הסכמת לקוח.',
         failures: blockingFailures,
         breakdown: { gross, tax, taxRate, fee, feeRate, net },
         useCase,
@@ -490,6 +500,7 @@ export function determineOutcome(validations, results, memberData) {
       return {
         type: 'blocked',
         message: `Blocked — retirement age not reached. ${memberData.gender === 'female' ? 'Female' : 'Male'} members require age ${retirementAge}. Early withdrawal is not allowed for this fund.`,
+        messageHe: `נחסם — גיל פרישה לא הושג. ${memberData.gender === 'female' ? 'נשים' : 'גברים'} נדרשים לגיל ${retirementAge}. משיכה מוקדמת אינה מותרת עבור קרן זו.`,
         failures: blockingFailures,
         useCase,
       }
@@ -499,6 +510,7 @@ export function determineOutcome(validations, results, memberData) {
       return {
         type: 'blocked',
         message: `Blocked — liquidity date has not been reached. Funds accessible after ${liqDateFormatted} (${memberData.liquidity_date}). You may reapply after this date.`,
+        messageHe: `נחסם — תאריך נזילות לא הגיע. הכספים נגישים לאחר ${liqDateFormatted} (${memberData.liquidity_date}). ניתן להגיש מחדש לאחר תאריך זה.`,
         failures: blockingFailures,
         useCase,
         eligibleDate: memberData.liquidity_date,
@@ -515,6 +527,7 @@ export function determineOutcome(validations, results, memberData) {
       return {
         type: 'blocked',
         message: `Blocked — minimum holding period not met. ${eligibleDate ? `You may reapply after ${new Date(eligibleDate).toLocaleDateString('he-IL')} (${eligibleDate}).` : ''}`,
+        messageHe: `נחסם — תקופת החזקה מינימלית לא הושלמה. ${eligibleDate ? `ניתן להגיש מחדש לאחר ${new Date(eligibleDate).toLocaleDateString('he-IL')} (${eligibleDate}).` : ''}`,
         failures: blockingFailures,
         useCase,
         eligibleDate,
@@ -524,34 +537,34 @@ export function determineOutcome(validations, results, memberData) {
 
   if (useCase === 'fund_transfer') {
     if (hasHoldingFailure) {
-      return { type: 'blocked', message: 'Blocked — track switch cooldown period not met', failures: blockingFailures, useCase }
+      return { type: 'blocked', message: 'Blocked — track switch cooldown period not met', messageHe: 'נחסם — תקופת המתנה להחלפת מסלול לא הושלמה', failures: blockingFailures, useCase }
     }
-    return { type: 'blocked', message: `Fund transfer blocked — ${blockingFailures.length} validation(s) failed`, failures: blockingFailures, useCase }
+    return { type: 'blocked', message: `Fund transfer blocked — ${blockingFailures.length} validation(s) failed`, messageHe: `העברה בין מסלולים נחסמה — ${blockingFailures.length} בדיקה/בדיקות נכשלו`, failures: blockingFailures, useCase }
   }
 
   if (useCase === 'beneficiary_update') {
     if (hasDocFailure) {
-      return { type: 'customer_action', message: 'Beneficiary update requires additional documentation — please provide notarized documents', failures: blockingFailures, useCase }
+      return { type: 'customer_action', message: 'Beneficiary update requires additional documentation — please provide notarized documents', messageHe: 'עדכון מוטבים דורש תיעוד נוסף — נא לספק מסמכים נוטריוניים', failures: blockingFailures, useCase }
     }
-    return { type: 'blocked', message: `Beneficiary update blocked — ${blockingFailures.length} validation(s) failed`, failures: blockingFailures, useCase }
+    return { type: 'blocked', message: `Beneficiary update blocked — ${blockingFailures.length} validation(s) failed`, messageHe: `עדכון מוטבים נחסם — ${blockingFailures.length} בדיקה/בדיקות נכשלו`, failures: blockingFailures, useCase }
   }
 
   if (useCase === 'employer_change') {
     if (hasEmployerFailure) {
-      return { type: 'customer_action', message: 'Employer change requires employer approval — please obtain written consent', failures: blockingFailures, useCase }
+      return { type: 'customer_action', message: 'Employer change requires employer approval — please obtain written consent', messageHe: 'החלפת מעסיק דורשת אישור מעסיק — נא להשיג הסכמה בכתב', failures: blockingFailures, useCase }
     }
-    return { type: 'blocked', message: `Employer change blocked — ${blockingFailures.length} validation(s) failed`, failures: blockingFailures, useCase }
+    return { type: 'blocked', message: `Employer change blocked — ${blockingFailures.length} validation(s) failed`, messageHe: `החלפת מעסיק נחסמה — ${blockingFailures.length} בדיקה/בדיקות נכשלו`, failures: blockingFailures, useCase }
   }
 
   if (useCase === 'early_redemption') {
     if (hasDocFailure) {
-      return { type: 'customer_action', message: 'Early redemption requires supporting documentation for qualifying reason', failures: blockingFailures, useCase }
+      return { type: 'customer_action', message: 'Early redemption requires supporting documentation for qualifying reason', messageHe: 'פדיון מוקדם דורש מסמכים תומכים לסיבה מזכה', failures: blockingFailures, useCase }
     }
     const hasReasonFailure = blockingFailures.some(({ validation }) =>
       validation.field === 'redemption_reason' || (validation.rule || '').toLowerCase().includes('qualifying reason')
     )
     if (hasReasonFailure) {
-      return { type: 'blocked', message: 'Blocked — redemption reason does not qualify for early redemption', failures: blockingFailures, useCase }
+      return { type: 'blocked', message: 'Blocked — redemption reason does not qualify for early redemption', messageHe: 'נחסם — סיבת הפדיון אינה מזכה לפדיון מוקדם', failures: blockingFailures, useCase }
     }
     // Early redemption with tax
     const taxRate = 30
@@ -562,6 +575,7 @@ export function determineOutcome(validations, results, memberData) {
       return {
         type: 'tax_consent',
         message: 'Early redemption — capital gains tax applies',
+        messageHe: 'פדיון מוקדם — חל מס רווחי הון',
         failures: blockingFailures,
         breakdown: { gross, tax, taxRate, fee: 0, feeRate: 0, net },
         useCase,
@@ -569,5 +583,5 @@ export function determineOutcome(validations, results, memberData) {
     }
   }
 
-  return { type: 'blocked', message: `${ucLabel} blocked — ${blockingFailures.length} critical validation(s) failed`, failures: blockingFailures, useCase }
+  return { type: 'blocked', message: `${ucLabel} blocked — ${blockingFailures.length} critical validation(s) failed`, messageHe: `${ucLabelHe} נחסמה — ${blockingFailures.length} בדיקה/בדיקות קריטיות נכשלו`, failures: blockingFailures, useCase }
 }

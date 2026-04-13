@@ -3,6 +3,7 @@ import FlowExecution from './FlowExecution'
 import AuditTrail from './AuditTrail'
 import HitlPanel from './HitlPanel'
 import ApiLogsPanel from './ApiLogsPanel'
+import { useT } from './i18n'
 
 const STATUS_COLORS = {
   RUNNING: 'bg-accent/20 text-accent',
@@ -39,6 +40,7 @@ function formatSlaDeadline(deadline) {
 export default function ExecutionDetail({ execution, onApprove, onReject, onBack, onHitlResolve }) {
   const [hitlValidationIndex, setHitlValidationIndex] = useState(null)
   const [activeDetailTab, setActiveDetailTab] = useState('flow')
+  const t = useT()
 
   if (!execution) return null
 
@@ -71,7 +73,7 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
           onClick={onBack}
           className="text-text-muted hover:text-accent text-sm flex items-center gap-1 transition-colors"
         >
-          <span>←</span> Back to Executions
+          <span>←</span> {t('detail.back')}
         </button>
       </div>
 
@@ -79,39 +81,39 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
       <div className="bg-bg-card rounded-xl border border-border p-4 mb-4">
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
           <div>
-            <span className="text-[10px] text-text-muted uppercase">Process ID</span>
+            <span className="text-[10px] text-text-muted uppercase">{t('detail.processId')}</span>
             <p className="text-sm font-mono text-accent">{execution.processId}</p>
           </div>
           <div>
-            <span className="text-[10px] text-text-muted uppercase">Member</span>
+            <span className="text-[10px] text-text-muted uppercase">{t('detail.member')}</span>
             <p className="text-sm text-text-primary">{execution.memberName}</p>
           </div>
           <div>
-            <span className="text-[10px] text-text-muted uppercase">Fund Type</span>
+            <span className="text-[10px] text-text-muted uppercase">{t('detail.fundType')}</span>
             <p className="text-sm text-text-primary">{execution.fundTypeLabel}</p>
           </div>
           <div>
-            <span className="text-[10px] text-text-muted uppercase">Action</span>
+            <span className="text-[10px] text-text-muted uppercase">{t('detail.action')}</span>
             <p className="text-sm text-text-primary">{execution.useCaseLabel}</p>
           </div>
           <div>
-            <span className="text-[10px] text-text-muted uppercase">Priority</span>
+            <span className="text-[10px] text-text-muted uppercase">{t('detail.priority')}</span>
             <p className={`text-xs font-semibold inline-block px-2 py-0.5 rounded-full ${PRIORITY_COLORS[execution.priority] || 'text-text-muted'}`}>
-              {execution.priority}
+              {t(`priority.${execution.priority}`, execution.priority)}
             </p>
           </div>
           <div>
-            <span className="text-[10px] text-text-muted uppercase">SLA Deadline</span>
+            <span className="text-[10px] text-text-muted uppercase">{t('detail.slaDeadline')}</span>
             <p className={`text-xs font-mono ${sla.color || 'text-text-primary'}`}>{sla.text || sla}</p>
           </div>
           <div>
-            <span className="text-[10px] text-text-muted uppercase">Status</span>
+            <span className="text-[10px] text-text-muted uppercase">{t('detail.status')}</span>
             <p className={`text-xs font-semibold inline-block px-2 py-0.5 rounded-full ${STATUS_COLORS[execution.status] || 'text-text-muted'}`}>
-              {execution.status}
+              {t(`status.${execution.status}`, execution.status)}
             </p>
           </div>
           <div>
-            <span className="text-[10px] text-text-muted uppercase">Easymaze</span>
+            <span className="text-[10px] text-text-muted uppercase">{t('detail.easymaze')}</span>
             <p className="text-xs">
               {execution.easymazeStatus === 'synced' ? (
                 <a
@@ -119,15 +121,15 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-success hover:text-success/80 transition-colors inline-flex items-center gap-1"
-                  title={`Open Service in Easymaze`}
+                  title={t('detail.openService')}
                 >
-                  🔗 {execution.easymazeServiceNumber || execution.easymazeServiceId ? `#${execution.easymazeServiceNumber || execution.easymazeServiceId}` : 'Synced'}
+                  🔗 {execution.easymazeServiceNumber || execution.easymazeServiceId ? `#${execution.easymazeServiceNumber || execution.easymazeServiceId}` : t('detail.synced')}
                   <svg className="w-3 h-3 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
                 </a>
               ) : execution.easymazeStatus === 'failed' ? (
-                <span className="text-error" title={execution.easymazeError || 'Failed'}>⚠️🔗 Failed</span>
+                <span className="text-error" title={execution.easymazeError || t('detail.failed')}>⚠️🔗 {t('detail.failed')}</span>
               ) : (
                 <span className="text-text-muted">—</span>
               )}
@@ -151,7 +153,7 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
             activeDetailTab === 'flow' ? 'bg-accent text-bg-primary' : 'bg-bg-card text-text-muted hover:text-text-primary border border-border'
           }`}
         >
-          Flow Execution
+          {t('detail.flowExecution')}
         </button>
         <button
           onClick={() => setActiveDetailTab('apiLogs')}
@@ -159,7 +161,7 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
             activeDetailTab === 'apiLogs' ? 'bg-accent text-bg-primary' : 'bg-bg-card text-text-muted hover:text-text-primary border border-border'
           }`}
         >
-          🔌 API Logs
+          🔌 {t('detail.apiLogs')}
           {apiLogCount > 0 && (
             <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${activeDetailTab === 'apiLogs' ? 'bg-bg-primary/30 text-bg-primary' : 'bg-accent/20 text-accent'}`}>
               {apiLogCount}
@@ -171,7 +173,7 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
       {/* Flow + HITL Panel layout */}
       {activeDetailTab === 'flow' && (
         <div className="flex gap-0">
-          <div className={`flex-1 min-w-0 ${showHitlPanel ? 'mr-4' : ''}`}>
+          <div className={`flex-1 min-w-0 ${showHitlPanel ? 'me-4' : ''}`}>
             <FlowExecution
               analysisMessages={execution.analysisMessages}
               validations={execution.validations}
@@ -213,7 +215,7 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
       {activeDetailTab === 'apiLogs' && (
         <div className="bg-bg-card rounded-xl border border-border p-5">
           <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-4">
-            API Call Log for {execution.processId}
+            {t('detail.apiCallLog')} {execution.processId}
           </h3>
           <ApiLogsPanel apiLogs={execution.apiLogs} />
         </div>

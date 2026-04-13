@@ -4,6 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   AreaChart, Area, LabelList,
 } from 'recharts'
+import { useT } from './i18n'
 
 const COLORS = {
   success: '#4ADE80',
@@ -30,19 +31,20 @@ const TOOLTIP_STYLE = {
 const AXIS_PROPS = { stroke: '#38595A', tick: { fill: '#8AABAD', fontSize: 11 } }
 const GRID_PROPS = { strokeDasharray: '3 3', stroke: '#1F4041' }
 
-function getStatusGroup(status) {
+// Internal keys for grouping - NOT displayed directly
+function getStatusGroupKey(status) {
   if (status === 'COMPLETED') return 'Success'
   if (status === 'BLOCKED' || status === 'REJECTED' || status === 'ERROR') return 'Failed'
   if (status === 'RUNNING') return 'Running'
-  if (status === 'PENDING_APPROVAL') return 'Needs HITL'
-  if (status === 'AWAITING_DOCUMENTS' || status === 'AWAITING_CONSENT') return 'Awaiting Customer'
+  if (status === 'PENDING_APPROVAL') return 'NeedsHITL'
+  if (status === 'AWAITING_DOCUMENTS' || status === 'AWAITING_CONSENT') return 'AwaitingCustomer'
   if (status === 'CANCELLED') return 'Cancelled'
   return 'Other'
 }
 
-function getStatusColor(group) {
-  const map = { 'Success': COLORS.success, 'Failed': COLORS.failed, 'Running': COLORS.running, 'Needs HITL': COLORS.needsHitl, 'Awaiting Customer': COLORS.awaitingCustomer, 'Cancelled': COLORS.cancelled }
-  return map[group] || '#8AABAD'
+function getStatusColor(groupKey) {
+  const map = { 'Success': COLORS.success, 'Failed': COLORS.failed, 'Running': COLORS.running, 'NeedsHITL': COLORS.needsHitl, 'AwaitingCustomer': COLORS.awaitingCustomer, 'Cancelled': COLORS.cancelled }
+  return map[groupKey] || '#8AABAD'
 }
 
 function getFundColor(fundType) {
@@ -51,7 +53,8 @@ function getFundColor(fundType) {
   return COLORS.studyFund
 }
 
-function getFundLabel(fundType) {
+function getFundLabel(fundType, t) {
+  if (t) return t(`fund.${fundType}`, fundType)
   if (fundType === 'investment') return 'Investment'
   if (fundType === 'compensation') return 'Compensation'
   return 'Study Fund'
@@ -79,16 +82,18 @@ function ChartCard({ title, subtitle, children, fullWidth }) {
   )
 }
 
-function DonutCenter({ total }) {
+function DonutCenter({ total, label }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
       <span className="text-2xl font-bold text-text-primary">{total}</span>
-      <span className="text-[10px] text-text-muted">total</span>
+      <span className="text-[10px] text-text-muted">{label}</span>
     </div>
   )
 }
 
 export default function Dashboard({ executions }) {
+  const t = useT()
+
   const stats = useMemo(() => {
     if (!executions || executions.length === 0) return null
 
@@ -110,11 +115,8 @@ export default function Dashboard({ executions }) {
     })
     const slaRate = completed.length > 0 ? Math.round((slaCompliant / completed.length) * 100) : 100
 
-    // Processing time (time from launch to last audit entry or now)
+    // Processing time
     const times = completed.map(e => {
-      const start = new Date(e.timestamp)
-      const lastAudit = e.auditEntries?.[e.auditEntries.length - 1]
-      // Approximate completion time as launch + number of validations * ~1s
       const validationCount = e.validations?.length || 0
       return validationCount * 1.2 + Math.random() * 2
     }).filter(t => t > 0)
@@ -125,11 +127,11 @@ export default function Dashboard({ executions }) {
     // Status distribution
     const statusCounts = {}
     executions.forEach(e => {
-      const group = getStatusGroup(e.status)
+      const group = getStatusGroupKey(e.status)
       statusCounts[group] = (statusCounts[group] || 0) + 1
     })
     const statusData = Object.entries(statusCounts)
-      .map(([name, value]) => ({ name, value, color: getStatusColor(name) }))
+      .map(([key, value]) => ({ name: t(`statusGroup.${key}`, key), value, color: getStatusColor(key) }))
       .sort((a, b) => b.value - a.value)
 
     // Success rate by fund type
@@ -141,7 +143,7 @@ export default function Dashboard({ executions }) {
       if (e.status === 'COMPLETED') fundGroups[ft].success++
     })
     const successByFund = Object.entries(fundGroups).map(([fund, d]) => ({
-      fund: getFundLabel(fund),
+      fund: getFundLabel(fund, t),
       fundKey: fund,
       successRate: d.total > 0 ? Math.round((d.success / d.total) * 100) : 0,
       success: d.success,
@@ -157,7 +159,7 @@ export default function Dashboard({ executions }) {
       fundTimes[ft].push(count * 1.2 + Math.random() * 2)
     })
     const avgTimeByFund = Object.entries(fundTimes).map(([fund, times]) => ({
-      fund: getFundLabel(fund),
+      fund: getFundLabel(fund, t),
       fundKey: fund,
       avgTime: +(times.reduce((a, b) => a + b, 0) / times.length).toFixed(1),
     })).sort((a, b) => b.avgTime - a.avgTime)
@@ -166,11 +168,11 @@ export default function Dashboard({ executions }) {
     const priorityMap = { High: { success: 0, failed: 0, hitl: 0, other: 0 }, Medium: { success: 0, failed: 0, hitl: 0, other: 0 }, Low: { success: 0, failed: 0, hitl: 0, other: 0 } }
     executions.forEach(e => {
       const p = e.priority || 'Low'
-      const group = getStatusGroup(e.status)
+      const group = getStatusGroupKey(e.status)
       if (!priorityMap[p]) return
       if (group === 'Success') priorityMap[p].success++
       else if (group === 'Failed') priorityMap[p].failed++
-      else if (group === 'Needs HITL') priorityMap[p].hitl++
+      else if (group === 'NeedsHITL') priorityMap[p].hitl++
       else priorityMap[p].other++
     })
     const priorityData = ['High', 'Medium', 'Low'].map(p => ({ priority: p, ...priorityMap[p] }))
@@ -195,7 +197,7 @@ export default function Dashboard({ executions }) {
         if (!e.slaDeadline || new Date() <= new Date(e.slaDeadline)) onTime++
       })
       return {
-        fund: getFundLabel(fund),
+        fund: getFundLabel(fund, t),
         fundKey: fund,
         compliance: fundExecs.length > 0 ? Math.round((onTime / fundExecs.length) * 100) : 100,
         onTime,
@@ -228,14 +230,14 @@ export default function Dashboard({ executions }) {
       slaRate, slaCompliant, avgTime, fastestTime, slowestTime,
       statusData, successByFund, avgTimeByFund, priorityData, timelineData, slaByFund, hitlData,
     }
-  }, [executions])
+  }, [executions, t])
 
   if (!stats) {
     return (
       <div className="flex flex-col items-center justify-center py-24">
         <div className="text-5xl mb-4 opacity-40">📊</div>
-        <h3 className="text-lg font-semibold text-text-primary mb-2">No data yet</h3>
-        <p className="text-sm text-text-muted">Launch scenarios from the Scenario Builder to populate the dashboard.</p>
+        <h3 className="text-lg font-semibold text-text-primary mb-2">{t('dashboard.empty.title')}</h3>
+        <p className="text-sm text-text-muted">{t('dashboard.empty.text')}</p>
       </div>
     )
   }
@@ -246,21 +248,21 @@ export default function Dashboard({ executions }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
-        <h2 className="text-lg font-bold text-text-primary">Operations Dashboard</h2>
-        <span className="text-[10px] text-text-muted">Live — updates in real-time</span>
+        <h2 className="text-lg font-bold text-text-primary">{t('dashboard.title')}</h2>
+        <span className="text-[10px] text-text-muted">{t('dashboard.live')}</span>
       </div>
 
       <div className="grid grid-cols-4 gap-3">
         {/* Row 1: Metric cards */}
-        <MetricCard label="Total Processes" value={stats.total} sub={`${stats.completed} completed`} />
-        <MetricCard label="Success Rate" value={`${stats.successRate}%`} color={successColor} sub={`${stats.successful} of ${stats.completed} completed`} />
-        <MetricCard label="SLA Compliance" value={`${stats.slaRate}%`} color={slaColor} sub={`${stats.slaCompliant} of ${stats.completed} within SLA`} />
-        <MetricCard label="Avg Processing Time" value={`${stats.avgTime}s`} sub={`Fastest: ${stats.fastestTime}s | Slowest: ${stats.slowestTime}s`} />
+        <MetricCard label={t('dashboard.totalProcesses')} value={stats.total} sub={`${stats.completed} ${t('dashboard.completed')}`} />
+        <MetricCard label={t('dashboard.successRate')} value={`${stats.successRate}%`} color={successColor} sub={`${stats.successful} ${t('dashboard.ofCompleted')} ${stats.completed} ${t('dashboard.completed')}`} />
+        <MetricCard label={t('dashboard.slaCompliance')} value={`${stats.slaRate}%`} color={slaColor} sub={`${stats.slaCompliant} ${t('dashboard.ofCompleted')} ${stats.completed} ${t('dashboard.withinSla')}`} />
+        <MetricCard label={t('dashboard.avgProcessingTime')} value={`${stats.avgTime}s`} sub={`${t('dashboard.fastest')}: ${stats.fastestTime}s | ${t('dashboard.slowest')}: ${stats.slowestTime}s`} />
 
         {/* Row 2: Status donut + Success by fund */}
-        <ChartCard title="Status Distribution" subtitle={`${stats.total} processes`}>
+        <ChartCard title={t('dashboard.statusDistribution')} subtitle={`${stats.total} ${t('dashboard.processes')}`}>
           <div className="relative">
-            <DonutCenter total={stats.total} />
+            <DonutCenter total={stats.total} label={t('executions.total')} />
             <ResponsiveContainer width="100%" height={260}>
               <PieChart>
                 <Pie
@@ -283,7 +285,7 @@ export default function Dashboard({ executions }) {
           </div>
         </ChartCard>
 
-        <ChartCard title="Success Rate by Fund Type" subtitle="Percentage of successful completions">
+        <ChartCard title={t('dashboard.successByFund')} subtitle={t('dashboard.successByFund.desc')}>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={stats.successByFund} margin={{ top: 20, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid {...GRID_PROPS} />
@@ -301,7 +303,7 @@ export default function Dashboard({ executions }) {
         </ChartCard>
 
         {/* Row 3: Processing time + Priority */}
-        <ChartCard title="Avg Processing Time by Fund" subtitle="Seconds per execution">
+        <ChartCard title={t('dashboard.avgTimeByFund')} subtitle={t('dashboard.avgTimeByFund.desc')}>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={stats.avgTimeByFund} margin={{ top: 20, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid {...GRID_PROPS} />
@@ -318,15 +320,15 @@ export default function Dashboard({ executions }) {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Priority Distribution" subtitle="Stacked by outcome">
+        <ChartCard title={t('dashboard.priorityDist')} subtitle={t('dashboard.priorityDist.desc')}>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={stats.priorityData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid {...GRID_PROPS} />
               <XAxis dataKey="priority" {...AXIS_PROPS} />
               <YAxis {...AXIS_PROPS} />
               <Tooltip {...TOOLTIP_STYLE} />
-              <Bar dataKey="success" stackId="a" fill={COLORS.success} name="Success" radius={[0, 0, 0, 0]} />
-              <Bar dataKey="failed" stackId="a" fill={COLORS.failed} name="Failed" />
+              <Bar dataKey="success" stackId="a" fill={COLORS.success} name={t('executions.success')} radius={[0, 0, 0, 0]} />
+              <Bar dataKey="failed" stackId="a" fill={COLORS.failed} name={t('executions.failed')} />
               <Bar dataKey="hitl" stackId="a" fill={COLORS.needsHitl} name="HITL" />
               <Bar dataKey="other" stackId="a" fill="#6B7280" name="Other" radius={[4, 4, 0, 0]} />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', color: '#8AABAD' }} />
@@ -335,23 +337,23 @@ export default function Dashboard({ executions }) {
         </ChartCard>
 
         {/* Row 4: Timeline full width */}
-        <ChartCard title="Executions Over Time" subtitle="Cumulative count" fullWidth>
+        <ChartCard title={t('dashboard.execOverTime')} subtitle={t('dashboard.execOverTime.desc')} fullWidth>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={stats.timelineData} margin={{ top: 10, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid {...GRID_PROPS} />
               <XAxis dataKey="time" {...AXIS_PROPS} />
               <YAxis {...AXIS_PROPS} allowDecimals={false} />
               <Tooltip {...TOOLTIP_STYLE} />
-              <Area type="monotone" dataKey="total" stroke="#8AABAD" fill="#8AABAD" fillOpacity={0.08} name="Total" />
-              <Area type="monotone" dataKey="success" stroke={COLORS.success} fill={COLORS.success} fillOpacity={0.12} name="Success" />
-              <Area type="monotone" dataKey="failed" stroke={COLORS.failed} fill={COLORS.failed} fillOpacity={0.12} name="Failed" />
+              <Area type="monotone" dataKey="total" stroke="#8AABAD" fill="#8AABAD" fillOpacity={0.08} name={t('executions.total')} />
+              <Area type="monotone" dataKey="success" stroke={COLORS.success} fill={COLORS.success} fillOpacity={0.12} name={t('executions.success')} />
+              <Area type="monotone" dataKey="failed" stroke={COLORS.failed} fill={COLORS.failed} fillOpacity={0.12} name={t('executions.failed')} />
               <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: '11px', color: '#8AABAD' }} />
             </AreaChart>
           </ResponsiveContainer>
         </ChartCard>
 
         {/* Row 5: SLA + HITL */}
-        <ChartCard title="SLA Compliance by Fund Type" subtitle="Within SLA deadline">
+        <ChartCard title={t('dashboard.slaByFund')} subtitle={t('dashboard.slaByFund.desc')}>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={stats.slaByFund} margin={{ top: 20, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid {...GRID_PROPS} />
@@ -368,7 +370,7 @@ export default function Dashboard({ executions }) {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="HITL Resolution Time" subtitle="Average seconds to resolve">
+        <ChartCard title={t('dashboard.hitlResolution')} subtitle={t('dashboard.hitlResolution.desc')}>
           {stats.hitlData.length > 0 ? (
             <ResponsiveContainer width="100%" height={260}>
               <BarChart data={stats.hitlData} layout="vertical" margin={{ top: 5, right: 40, left: 10, bottom: 5 }}>
@@ -383,7 +385,7 @@ export default function Dashboard({ executions }) {
             </ResponsiveContainer>
           ) : (
             <div className="flex items-center justify-center h-60 text-sm text-text-muted">
-              No HITL interactions resolved yet.
+              {t('dashboard.noHitl')}
             </div>
           )}
         </ChartCard>

@@ -1,10 +1,5 @@
 import { useState } from 'react'
-
-const TABS = [
-  { id: 'input', label: 'Input Data' },
-  { id: 'policies', label: 'Customer Contract' },
-  { id: 'regulations', label: 'Regulations' },
-]
+import { useT, useLoc } from './i18n'
 
 const USE_CASE_BADGES = {
   withdrawal: { label: 'Withdrawal', labelHe: 'משיכה', color: 'bg-amber-500/20 text-amber-300' },
@@ -51,16 +46,16 @@ function getFieldsForUseCase(memberData) {
 
   // Common fund-level fields
   const fundFields = {
-    investment: [['Balance (₪)', 'balance', 'number']],
+    investment: [['dataTabs.balance', 'balance', 'number']],
     compensation: [
-      ['Gender', 'gender'],
-      ['Employer', 'employer'],
-      ['Balance (₪)', 'balance', 'number'],
+      ['dataTabs.gender', 'gender'],
+      ['dataTabs.employer', 'employer'],
+      ['dataTabs.balance', 'balance', 'number'],
     ],
     study: [
-      ['General Track Balance (₪)', 'general_track_balance', 'number'],
-      ['Stock Track Balance (₪)', 'stock_track_balance', 'number'],
-      ['Total Balance (₪)', 'total_balance', 'number'],
+      ['dataTabs.generalTrackBalance', 'general_track_balance', 'number'],
+      ['dataTabs.stockTrackBalance', 'stock_track_balance', 'number'],
+      ['dataTabs.totalBalance', 'total_balance', 'number'],
     ],
   }
 
@@ -68,66 +63,66 @@ function getFieldsForUseCase(memberData) {
   const useCaseFields = {
     // Investment
     investment_withdrawal: [
-      ['Withdrawal Amount (₪)', 'withdrawal_amount', 'number'],
-      ['Start Date', 'start_date', 'date'],
-      ['Min Holding Months', 'policy_minimum_holding_months', 'number'],
+      ['dataTabs.withdrawalAmount', 'withdrawal_amount', 'number'],
+      ['dataTabs.startDate', 'start_date', 'date'],
+      ['dataTabs.minHoldingMonths', 'policy_minimum_holding_months', 'number'],
     ],
     investment_fund_transfer: [
-      ['Source Track', 'source_track'],
-      ['Target Track', 'target_track'],
-      ['Source Track Balance (₪)', 'source_track_balance', 'number'],
-      ['Transfer Amount (₪)', 'transfer_amount', 'number'],
-      ['Transfer Percentage (%)', 'transfer_percentage', 'number'],
+      ['dataTabs.sourceTrack', 'source_track'],
+      ['dataTabs.targetTrack', 'target_track'],
+      ['dataTabs.sourceTrackBalance', 'source_track_balance', 'number'],
+      ['dataTabs.transferAmount', 'transfer_amount', 'number'],
+      ['dataTabs.transferPercentage', 'transfer_percentage', 'number'],
     ],
     investment_beneficiary_update: [
-      ['Change Reason', 'change_reason'],
-      ['Notary Verified', 'notary_verified'],
-      ['Consent Obtained', 'beneficiary_consent_obtained'],
+      ['dataTabs.changeReason', 'change_reason'],
+      ['dataTabs.notaryVerified', 'notary_verified'],
+      ['dataTabs.consentObtained', 'beneficiary_consent_obtained'],
     ],
 
     // Compensation
     compensation_withdrawal: [
-      ['Withdrawal Amount (₪)', 'withdrawal_amount', 'number'],
-      ['Early Withdrawal Allowed', 'early_withdrawal_allowed'],
+      ['dataTabs.withdrawalAmount', 'withdrawal_amount', 'number'],
+      ['dataTabs.earlyWithdrawalAllowed', 'early_withdrawal_allowed'],
     ],
     compensation_employer_change: [
-      ['Current Employer', 'current_employer'],
-      ['New Employer', 'new_employer'],
-      ['Employment End Date', 'employment_end_date', 'date'],
-      ['New Employment Start Date', 'new_employment_start_date', 'date'],
-      ['Transfer Balance (₪)', 'transfer_balance', 'number'],
-      ['Gap Days', 'gap_days', 'number'],
-      ['Severance Included', 'severance_included'],
-      ['Employer Approval Received', 'employer_approval_received'],
-      ['Continuous Employment', 'continuous_employment'],
+      ['dataTabs.currentEmployer', 'current_employer'],
+      ['dataTabs.newEmployer', 'new_employer'],
+      ['dataTabs.employmentEndDate', 'employment_end_date', 'date'],
+      ['dataTabs.newEmploymentStartDate', 'new_employment_start_date', 'date'],
+      ['dataTabs.transferBalance', 'transfer_balance', 'number'],
+      ['dataTabs.gapDays', 'gap_days', 'number'],
+      ['dataTabs.severanceIncluded', 'severance_included'],
+      ['dataTabs.employerApproval', 'employer_approval_received'],
+      ['dataTabs.continuousEmployment', 'continuous_employment'],
     ],
     compensation_beneficiary_update: [
-      ['Change Reason', 'change_reason'],
-      ['Notary Verified', 'notary_verified'],
-      ['Consent Obtained', 'beneficiary_consent_obtained'],
-      ['Employer Notified', 'employer_notified'],
+      ['dataTabs.changeReason', 'change_reason'],
+      ['dataTabs.notaryVerified', 'notary_verified'],
+      ['dataTabs.consentObtained', 'beneficiary_consent_obtained'],
+      ['dataTabs.employerNotified', 'employer_notified'],
     ],
 
     // Study
     study_withdrawal: [
-      ['Withdrawal Amount (₪)', 'withdrawal_amount', 'number'],
-      ['Liquidity Date', 'liquidity_date', 'date'],
+      ['dataTabs.withdrawalAmount', 'withdrawal_amount', 'number'],
+      ['dataTabs.liquidityDate', 'liquidity_date', 'date'],
     ],
     study_fund_transfer: [
-      ['Current General Track (%)', 'current_general_pct', 'number'],
-      ['Current Stock Track (%)', 'current_stock_pct', 'number'],
-      ['Target General Track (%)', 'target_general_pct', 'number'],
-      ['Target Stock Track (%)', 'target_stock_pct', 'number'],
-      ['Rebalance Amount (₪)', 'rebalance_amount', 'number'],
-      ['Rebalance Direction', 'rebalance_direction'],
+      ['dataTabs.currentGeneralTrack', 'current_general_pct', 'number'],
+      ['dataTabs.currentStockTrack', 'current_stock_pct', 'number'],
+      ['dataTabs.targetGeneralTrack', 'target_general_pct', 'number'],
+      ['dataTabs.targetStockTrack', 'target_stock_pct', 'number'],
+      ['dataTabs.rebalanceAmount', 'rebalance_amount', 'number'],
+      ['dataTabs.rebalanceDirection', 'rebalance_direction'],
     ],
     study_early_redemption: [
-      ['Redemption Amount (₪)', 'redemption_amount', 'number'],
-      ['Redemption Reason', 'redemption_reason'],
-      ['Supporting Documents', 'supporting_documents'],
-      ['Tax Aware', 'tax_aware'],
-      ['Employer Notified', 'employer_notified'],
-      ['Liquidity Date', 'liquidity_date', 'date'],
+      ['dataTabs.redemptionAmount', 'redemption_amount', 'number'],
+      ['dataTabs.redemptionReason', 'redemption_reason'],
+      ['dataTabs.supportingDocuments', 'supporting_documents'],
+      ['dataTabs.taxAware', 'tax_aware'],
+      ['dataTabs.employerNotified', 'employer_notified'],
+      ['dataTabs.liquidityDate', 'liquidity_date', 'date'],
     ],
   }
 
@@ -139,19 +134,21 @@ function getFieldsForUseCase(memberData) {
 }
 
 function InputDataTab({ memberData, setMemberData }) {
-  if (!memberData) return <EmptyState text="Generate a scenario to see member data" />
+  const t = useT()
+
+  if (!memberData) return <EmptyState text={t('dataTabs.generateToSeeContract')} />
 
   const update = (field, value) => setMemberData(prev => ({ ...prev, [field]: value }))
 
   const commonFields = [
-    ['Member ID', 'member_id'],
-    ['Member Name', 'member_name'],
-    ['Birth Date', 'birth_date', 'date'],
-    ['Phone', 'phone'],
-    ['Email', 'email'],
-    ['Account Number', 'account_number'],
-    ['Account Owner', 'account_owner'],
-    ['ID Photo Confidence (%)', 'id_photo_confidence', 'number'],
+    ['dataTabs.memberId', 'member_id'],
+    ['dataTabs.memberName', 'member_name'],
+    ['dataTabs.birthDate', 'birth_date', 'date'],
+    ['dataTabs.phone', 'phone'],
+    ['dataTabs.email', 'email'],
+    ['dataTabs.accountNumber', 'account_number'],
+    ['dataTabs.accountOwner', 'account_owner'],
+    ['dataTabs.idPhotoConfidence', 'id_photo_confidence', 'number'],
   ]
 
   const { fundFields, useCaseFields } = getFieldsForUseCase(memberData)
@@ -160,6 +157,15 @@ function InputDataTab({ memberData, setMemberData }) {
   const booleanFields = ['early_withdrawal_allowed', 'notary_verified', 'beneficiary_consent_obtained',
     'employer_approval_received', 'employer_notified', 'continuous_employment', 'severance_included',
     'supporting_documents', 'tax_aware']
+
+  // Use case data section header key
+  const ucDataKeys = {
+    withdrawal: 'dataTabs.withdrawalData',
+    fund_transfer: 'dataTabs.fundTransferData',
+    beneficiary_update: 'dataTabs.beneficiaryData',
+    employer_change: 'dataTabs.employerData',
+    early_redemption: 'dataTabs.earlyRedemptionData',
+  }
 
   return (
     <div className="space-y-4 animate-fade-in-up">
@@ -173,10 +179,10 @@ function InputDataTab({ memberData, setMemberData }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        {commonFields.map(([label, field, type]) => (
+        {commonFields.map(([labelKey, field, type]) => (
           <InputField
             key={field}
-            label={label}
+            label={t(labelKey)}
             value={memberData[field]}
             onChange={v => update(field, v)}
             type={type}
@@ -185,46 +191,46 @@ function InputDataTab({ memberData, setMemberData }) {
       </div>
 
       <hr className="border-border" />
-      <h4 className="text-xs text-text-muted uppercase tracking-wider">Fund Data</h4>
+      <h4 className="text-xs text-text-muted uppercase tracking-wider">{t('dataTabs.fundData')}</h4>
 
       <div className="grid grid-cols-2 gap-3">
-        {fundFields.map(([label, field, type]) => (
-          <InputField key={field} label={label} value={memberData[field]} onChange={v => update(field, v)} type={type} />
+        {fundFields.map(([labelKey, field, type]) => (
+          <InputField key={field} label={t(labelKey)} value={memberData[field]} onChange={v => update(field, v)} type={type} />
         ))}
       </div>
 
       <hr className="border-border" />
-      <h4 className="text-xs text-text-muted uppercase tracking-wider">{ucBadge.label} Data</h4>
+      <h4 className="text-xs text-text-muted uppercase tracking-wider">{t(ucDataKeys[memberData.use_case] || 'dataTabs.withdrawalData')}</h4>
 
       <div className="grid grid-cols-2 gap-3">
-        {useCaseFields.map(([label, field, type]) => {
+        {useCaseFields.map(([labelKey, field, type]) => {
           if (booleanFields.includes(field)) {
             return (
               <div key={field}>
-                <label className="block text-xs text-text-muted mb-1">{label}</label>
+                <label className="block text-xs text-text-muted mb-1">{t(labelKey)}</label>
                 <select
                   value={String(memberData[field])}
                   onChange={e => update(field, e.target.value === 'true')}
                   className="w-full bg-bg-primary border border-border rounded px-3 py-1.5 text-sm text-text-primary focus:border-accent focus:outline-none"
                 >
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
+                  <option value="true">{t('dataTabs.yes')}</option>
+                  <option value="false">{t('dataTabs.no')}</option>
                 </select>
               </div>
             )
           }
           return (
-            <InputField key={field} label={label} value={memberData[field]} onChange={v => update(field, v)} type={type} />
+            <InputField key={field} label={t(labelKey)} value={memberData[field]} onChange={v => update(field, v)} type={type} />
           )
         })}
       </div>
 
       {/* Beneficiary lists */}
       {memberData.current_beneficiaries && (
-        <BeneficiaryList label="Current Beneficiaries" beneficiaries={memberData.current_beneficiaries} />
+        <BeneficiaryList label={t('dataTabs.currentBeneficiaries')} beneficiaries={memberData.current_beneficiaries} />
       )}
       {memberData.new_beneficiaries && (
-        <BeneficiaryList label="New Beneficiaries" beneficiaries={memberData.new_beneficiaries} />
+        <BeneficiaryList label={t('dataTabs.newBeneficiaries')} beneficiaries={memberData.new_beneficiaries} />
       )}
     </div>
   )
@@ -248,7 +254,9 @@ const CATEGORY_COLORS = {
 }
 
 function ContractTab({ contract, setContract }) {
-  if (!contract) return <EmptyState text="Generate a scenario to see contract terms" />
+  const t = useT()
+  const loc = useLoc()
+  if (!contract) return <EmptyState text={t('dataTabs.generateToSeeContract')} />
 
   const updateClause = (index, field, value) => {
     setContract(prev => ({
@@ -269,16 +277,16 @@ function ContractTab({ contract, setContract }) {
       {/* Contract header */}
       <div className="bg-bg-primary rounded-lg border border-border p-3">
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-          <div><span className="text-text-muted">Contract ID:</span> <span className="font-mono text-accent">{contract.contract_id}</span></div>
-          <div><span className="text-text-muted">Customer:</span> <span className="text-text-primary">{contract.customer_name}</span></div>
-          <div><span className="text-text-muted">Insurance Company:</span> <span className="text-text-primary">{contract.insurance_company}</span></div>
-          <div><span className="text-text-muted">Fund Type:</span> <span className="text-text-primary">{contract.fund_type}</span></div>
-          <div><span className="text-text-muted">Effective:</span> <span className="text-text-primary">{contract.effective_date}</span></div>
-          <div><span className="text-text-muted">Expires:</span> <span className="text-text-primary">{contract.expiry_date}</span></div>
+          <div><span className="text-text-muted">{t('dataTabs.contractId')}</span> <span className="font-mono text-accent">{contract.contract_id}</span></div>
+          <div><span className="text-text-muted">{t('dataTabs.customer')}</span> <span className="text-text-primary">{loc(contract, 'customer_name')}</span></div>
+          <div><span className="text-text-muted">{t('dataTabs.insuranceCompany')}</span> <span className="text-text-primary">{contract.insurance_company}</span></div>
+          <div><span className="text-text-muted">{t('dataTabs.fundTypeLabel')}</span> <span className="text-text-primary">{contract.fund_type}</span></div>
+          <div><span className="text-text-muted">{t('dataTabs.effective')}</span> <span className="text-text-primary">{contract.effective_date}</span></div>
+          <div><span className="text-text-muted">{t('dataTabs.expires')}</span> <span className="text-text-primary">{contract.expiry_date}</span></div>
         </div>
       </div>
 
-      <h4 className="text-xs text-text-muted uppercase tracking-wider">Contract Terms ({contract.clauses.length} clauses)</h4>
+      <h4 className="text-xs text-text-muted uppercase tracking-wider">{t('dataTabs.contractTerms')} ({contract.clauses.length} {t('dataTabs.clauses')})</h4>
 
       {contract.clauses.map((clause, i) => (
         <div key={i} className="bg-bg-primary rounded-lg border border-border p-4">
@@ -286,19 +294,19 @@ function ContractTab({ contract, setContract }) {
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-mono text-accent bg-accent/10 px-2 py-0.5 rounded">{clause.clause_id}</span>
               {clause.category && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${CATEGORY_COLORS[clause.category] || 'bg-bg-card text-text-muted'}`}>{clause.category}</span>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded ${CATEGORY_COLORS[clause.category] || 'bg-bg-card text-text-muted'}`}>{t(`cat.${clause.category}`, clause.category)}</span>
               )}
-              <span className={`text-[10px] px-1.5 py-0.5 rounded ${CONSEQUENCE_COLORS[clause.consequence] || 'bg-warning/20 text-warning'}`}>{clause.consequence}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded ${CONSEQUENCE_COLORS[clause.consequence] || 'bg-warning/20 text-warning'}`}>{t(`consequence.${clause.consequence}`, clause.consequence)}</span>
             </div>
             <button onClick={() => removeClause(i)} className="text-text-muted hover:text-error text-xs">✕</button>
           </div>
           <input
-            value={clause.title || ''}
+            value={loc(clause, 'title') || ''}
             onChange={e => updateClause(i, 'title', e.target.value)}
             className="w-full bg-transparent text-sm font-semibold text-text-primary mb-1 focus:outline-none border-b border-transparent focus:border-accent"
           />
           <textarea
-            value={clause.description || ''}
+            value={loc(clause, 'description') || ''}
             onChange={e => updateClause(i, 'description', e.target.value)}
             rows={2}
             className="w-full bg-transparent text-xs text-text-muted mt-1 focus:outline-none resize-none border-b border-transparent focus:border-accent"
@@ -306,7 +314,7 @@ function ContractTab({ contract, setContract }) {
           {clause.conditions && clause.conditions.length > 0 && (
             <div className="mt-2 text-[10px] text-text-muted font-mono">
               {clause.conditions.map((c, j) => (
-                <span key={j} className="inline-block bg-bg-card rounded px-1.5 py-0.5 mr-1 mb-1">
+                <span key={j} className="inline-block bg-bg-card rounded px-1.5 py-0.5 me-1 mb-1">
                   {c.field} {c.operator} {JSON.stringify(c.value)}
                 </span>
               ))}
@@ -319,7 +327,9 @@ function ContractTab({ contract, setContract }) {
 }
 
 function RegulationsTab({ regulations, setRegulations }) {
-  if (!regulations || regulations.length === 0) return <EmptyState text="Generate a scenario to see regulations" />
+  const t = useT()
+  const loc = useLoc()
+  if (!regulations || regulations.length === 0) return <EmptyState text={t('dataTabs.generateToSeeRegulations')} />
 
   const updateReg = (index, field, value) => {
     setRegulations(prev => prev.map((r, i) => i === index ? { ...r, [field]: value } : r))
@@ -345,17 +355,17 @@ function RegulationsTab({ regulations, setRegulations }) {
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="text-xs font-mono text-accent bg-accent/10 px-2 py-0.5 rounded">{reg.regulation_id}</span>
-              <span className="text-xs text-text-muted">{reg.authority}</span>
+              <span className="text-xs text-text-muted">{loc(reg, 'authority')}</span>
             </div>
             <button onClick={() => removeRegulation(i)} className="text-text-muted hover:text-error text-xs">✕</button>
           </div>
           <input
-            value={reg.title || ''}
+            value={loc(reg, 'title') || ''}
             onChange={e => updateReg(i, 'title', e.target.value)}
             className="w-full bg-transparent text-sm font-semibold text-text-primary mb-2 focus:outline-none border-b border-transparent focus:border-accent"
           />
           <div className="space-y-1">
-            {reg.requirements.map((req, j) => (
+            {(loc(reg, 'requirements') || reg.requirements).map((req, j) => (
               <textarea
                 key={j}
                 value={req || ''}
@@ -365,7 +375,7 @@ function RegulationsTab({ regulations, setRegulations }) {
               />
             ))}
           </div>
-          <div className="mt-2 text-[10px] text-text-muted">Effective: {reg.effective_date}</div>
+          <div className="mt-2 text-[10px] text-text-muted">{t('dataTabs.effective')} {reg.effective_date}</div>
         </div>
       ))}
     </div>
@@ -382,6 +392,13 @@ function EmptyState({ text }) {
 
 export default function DataTabs({ memberData, setMemberData, contract, setContract, regulations, setRegulations }) {
   const [activeTab, setActiveTab] = useState('input')
+  const t = useT()
+
+  const TABS = [
+    { id: 'input', label: t('dataTabs.inputData') },
+    { id: 'policies', label: t('dataTabs.contract') },
+    { id: 'regulations', label: t('dataTabs.regulations') },
+  ]
 
   return (
     <div className="bg-bg-card rounded-xl border border-border overflow-hidden">
@@ -399,10 +416,10 @@ export default function DataTabs({ memberData, setMemberData, contract, setContr
           >
             {tab.label}
             {tab.id === 'policies' && contract?.clauses?.length > 0 && (
-              <span className="ml-1.5 text-[10px] bg-accent/20 text-accent px-1.5 rounded-full">{contract.clauses.length}</span>
+              <span className="ms-1.5 text-[10px] bg-accent/20 text-accent px-1.5 rounded-full">{contract.clauses.length}</span>
             )}
             {tab.id === 'regulations' && regulations?.length > 0 && (
-              <span className="ml-1.5 text-[10px] bg-accent/20 text-accent px-1.5 rounded-full">{regulations.length}</span>
+              <span className="ms-1.5 text-[10px] bg-accent/20 text-accent px-1.5 rounded-full">{regulations.length}</span>
             )}
             {activeTab === tab.id && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent" />

@@ -1,15 +1,16 @@
 import { useState, useMemo } from 'react'
+import { useT } from './i18n'
 
 const STATUS_CONFIG = {
-  RUNNING:            { label: 'Running',           color: 'bg-blue-500/20 text-blue-400',   dot: 'bg-blue-400', pulse: true },
-  COMPLETED:          { label: 'Success',           color: 'bg-success/20 text-success',     dot: 'bg-success' },
-  BLOCKED:            { label: 'Failed',            color: 'bg-error/20 text-error',         dot: 'bg-error' },
-  REJECTED:           { label: 'Failed',            color: 'bg-error/20 text-error',         dot: 'bg-error' },
-  ERROR:              { label: 'Failed',            color: 'bg-error/20 text-error',         dot: 'bg-error' },
-  PENDING_APPROVAL:   { label: 'Needs HITL',        color: 'bg-warning/20 text-warning',     dot: 'bg-warning' },
-  AWAITING_DOCUMENTS: { label: 'Awaiting Customer', color: 'bg-purple-500/20 text-purple-400', dot: 'bg-purple-400' },
-  AWAITING_CONSENT:   { label: 'Awaiting Customer', color: 'bg-purple-500/20 text-purple-400', dot: 'bg-purple-400' },
-  CANCELLED:          { label: 'Cancelled',         color: 'bg-text-muted/20 text-text-muted', dot: 'bg-text-muted' },
+  RUNNING:            { tKey: 'status.RUNNING',           color: 'bg-blue-500/20 text-blue-400',   dot: 'bg-blue-400', pulse: true },
+  COMPLETED:          { tKey: 'status.COMPLETED',         color: 'bg-success/20 text-success',     dot: 'bg-success' },
+  BLOCKED:            { tKey: 'status.FAILED',            color: 'bg-error/20 text-error',         dot: 'bg-error' },
+  REJECTED:           { tKey: 'status.FAILED',            color: 'bg-error/20 text-error',         dot: 'bg-error' },
+  ERROR:              { tKey: 'status.FAILED',            color: 'bg-error/20 text-error',         dot: 'bg-error' },
+  PENDING_APPROVAL:   { tKey: 'status.PENDING_APPROVAL',  color: 'bg-warning/20 text-warning',     dot: 'bg-warning' },
+  AWAITING_DOCUMENTS: { tKey: 'status.AWAITING_CUSTOMER', color: 'bg-purple-500/20 text-purple-400', dot: 'bg-purple-400' },
+  AWAITING_CONSENT:   { tKey: 'status.AWAITING_CUSTOMER', color: 'bg-purple-500/20 text-purple-400', dot: 'bg-purple-400' },
+  CANCELLED:          { tKey: 'status.CANCELLED',         color: 'bg-text-muted/20 text-text-muted', dot: 'bg-text-muted' },
 }
 
 const PRIORITY_CONFIG = {
@@ -28,7 +29,7 @@ function getStatusGroup(status) {
   return 'other'
 }
 
-function formatRelativeTime(isoString) {
+function formatRelativeTime(isoString, t) {
   if (!isoString) return '—'
   const date = new Date(isoString)
   const now = new Date()
@@ -36,16 +37,16 @@ function formatRelativeTime(isoString) {
   const diffMin = Math.floor(diffMs / 60000)
   const diffHrs = Math.floor(diffMs / 3600000)
 
-  if (diffMin < 1) return 'just now'
-  if (diffMin < 60) return `${diffMin} min ago`
+  if (diffMin < 1) return t('time.justNow')
+  if (diffMin < 60) return `${diffMin} ${t('time.minAgo')}`
   if (diffHrs < 24) {
     const timeStr = date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-    return `today ${timeStr}`
+    return `${t('time.today')} ${timeStr}`
   }
   return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
-function formatSlaRemaining(slaDeadline, contract) {
+function formatSlaRemaining(slaDeadline, contract, t) {
   if (!slaDeadline) return { text: '—', color: 'text-text-muted', warn: false }
   const deadline = new Date(slaDeadline)
   const now = new Date()
@@ -62,13 +63,13 @@ function formatSlaRemaining(slaDeadline, contract) {
   const totalSlaMs = totalSlaDays * 24 * 3600000
   const pctRemaining = diffMs / totalSlaMs
 
-  if (diffMs < 0) return { text: 'Breached', color: 'text-error', warn: true, breached: true }
+  if (diffMs < 0) return { text: t('time.breached'), color: 'text-error', warn: true, breached: true }
   if (pctRemaining < 0.2) {
-    const label = diffHrs < 24 ? `${Math.ceil(diffHrs)}h left` : `${Math.ceil(diffDays)}d left`
+    const label = diffHrs < 24 ? `${Math.ceil(diffHrs)} ${t('time.hLeft')}` : `${Math.ceil(diffDays)} ${t('time.dLeft')}`
     return { text: label, color: 'text-warning', warn: true }
   }
-  if (diffDays < 1) return { text: `${Math.ceil(diffHrs)}h left`, color: 'text-text-primary', warn: false }
-  return { text: `${Math.ceil(diffDays)}d left`, color: 'text-text-primary', warn: false }
+  if (diffDays < 1) return { text: `${Math.ceil(diffHrs)} ${t('time.hLeft')}`, color: 'text-text-primary', warn: false }
+  return { text: `${Math.ceil(diffDays)} ${t('time.dLeft')}`, color: 'text-text-primary', warn: false }
 }
 
 const SORT_FIELDS = {
@@ -85,23 +86,6 @@ const SORT_FIELDS = {
   useCaseLabel: (a, b) => (a.useCaseLabel || '').localeCompare(b.useCaseLabel || ''),
 }
 
-const STATUS_FILTER_OPTIONS = [
-  { value: '', label: 'All Statuses' },
-  { value: 'running', label: 'Running' },
-  { value: 'success', label: 'Success' },
-  { value: 'failed', label: 'Failed' },
-  { value: 'hitl', label: 'Needs HITL' },
-  { value: 'awaiting', label: 'Awaiting Customer' },
-  { value: 'cancelled', label: 'Cancelled' },
-]
-
-const PRIORITY_FILTER_OPTIONS = [
-  { value: '', label: 'All Priorities' },
-  { value: 'High', label: 'High' },
-  { value: 'Medium', label: 'Medium' },
-  { value: 'Low', label: 'Low' },
-]
-
 export default function ExecutionsList({ executions, onSelect, onGoToBuilder, onFlood }) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -110,12 +94,13 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
   const [sortField, setSortField] = useState('timestamp')
   const [sortAsc, setSortAsc] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
+  const t = useT()
 
   // Unique fund types for filter dropdown
   const fundTypes = useMemo(() => {
     const types = [...new Set(executions.map(e => e.fundTypeLabel))].sort()
-    return [{ value: '', label: 'All Fund Types' }, ...types.map(t => ({ value: t, label: t }))]
-  }, [executions])
+    return [{ value: '', label: t('executions.allFundTypes') }, ...types.map(ft => ({ value: ft, label: ft }))]
+  }, [executions, t])
 
   // Summary stats
   const stats = useMemo(() => {
@@ -172,7 +157,7 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
   const SortHeader = ({ field, children }) => (
     <th
       onClick={() => handleSort(field)}
-      className="text-left py-3 px-4 cursor-pointer hover:text-text-primary select-none transition-colors"
+      className="text-start py-3 px-4 cursor-pointer hover:text-text-primary select-none transition-colors"
     >
       <span className="inline-flex items-center gap-1">
         {children}
@@ -191,15 +176,15 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
-        <h3 className="text-lg font-semibold text-text-primary mb-2">No executions yet</h3>
-        <p className="text-sm text-text-muted mb-4">Go to Scenario Builder to launch your first flow, or flood the system with sample data.</p>
+        <h3 className="text-lg font-semibold text-text-primary mb-2">{t('executions.empty.title')}</h3>
+        <p className="text-sm text-text-muted mb-4">{t('executions.empty.text')}</p>
         <div className="flex items-center gap-3">
           {onGoToBuilder && (
             <button
               onClick={onGoToBuilder}
               className="text-sm text-accent hover:text-accent/80 transition-colors"
             >
-              Open Scenario Builder →
+              {t('executions.empty.goToBuilder')} →
             </button>
           )}
           {onFlood && (
@@ -207,7 +192,7 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
               onClick={() => onFlood(10)}
               className="bg-warning hover:bg-warning/80 text-bg-primary font-semibold rounded-lg px-4 py-2 text-sm transition-colors flex items-center gap-1.5"
             >
-              🚀 Launch 10 random scenarios
+              🚀 {t('executions.empty.flood')}
             </button>
           )}
         </div>
@@ -221,16 +206,16 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
     <div>
       {/* Summary stats bar */}
       <div className="grid grid-cols-5 gap-3 mb-5">
-        <StatCard label="Total" value={stats.total} color="text-text-primary" bg="bg-bg-card" active={!statusFilter} onClick={() => setStatusFilter('')} />
-        <StatCard label="Success" value={stats.success} color="text-success" bg="bg-success/5" dot="bg-success" active={statusFilter === 'success'} onClick={() => setStatusFilter(statusFilter === 'success' ? '' : 'success')} />
-        <StatCard label="Failed" value={stats.failed} color="text-error" bg="bg-error/5" dot="bg-error" active={statusFilter === 'failed'} onClick={() => setStatusFilter(statusFilter === 'failed' ? '' : 'failed')} />
-        <StatCard label="Running" value={stats.running} color="text-blue-400" bg="bg-blue-500/5" dot="bg-blue-400" pulse active={statusFilter === 'running'} onClick={() => setStatusFilter(statusFilter === 'running' ? '' : 'running')} />
-        <StatCard label="Needs HITL" value={stats.hitl} color="text-warning" bg="bg-warning/5" dot="bg-warning" active={statusFilter === 'hitl'} onClick={() => setStatusFilter(statusFilter === 'hitl' ? '' : 'hitl')} />
+        <StatCard label={t('executions.total')} value={stats.total} color="text-text-primary" bg="bg-bg-card" active={!statusFilter} onClick={() => setStatusFilter('')} />
+        <StatCard label={t('executions.success')} value={stats.success} color="text-success" bg="bg-success/5" dot="bg-success" active={statusFilter === 'success'} onClick={() => setStatusFilter(statusFilter === 'success' ? '' : 'success')} />
+        <StatCard label={t('executions.failed')} value={stats.failed} color="text-error" bg="bg-error/5" dot="bg-error" active={statusFilter === 'failed'} onClick={() => setStatusFilter(statusFilter === 'failed' ? '' : 'failed')} />
+        <StatCard label={t('executions.running')} value={stats.running} color="text-blue-400" bg="bg-blue-500/5" dot="bg-blue-400" pulse active={statusFilter === 'running'} onClick={() => setStatusFilter(statusFilter === 'running' ? '' : 'running')} />
+        <StatCard label={t('executions.needsHitl')} value={stats.hitl} color="text-warning" bg="bg-warning/5" dot="bg-warning" active={statusFilter === 'hitl'} onClick={() => setStatusFilter(statusFilter === 'hitl' ? '' : 'hitl')} />
       </div>
 
       {/* Header bar with search and filters */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-text-primary">Executions</h2>
+        <h2 className="text-lg font-bold text-text-primary">{t('executions.title')}</h2>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -243,21 +228,21 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
             </svg>
-            Filter
+            {t('executions.filter')}
             {hasActiveFilters && (
               <span className="w-1.5 h-1.5 rounded-full bg-accent" />
             )}
           </button>
           <div className="relative">
-            <svg className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="w-3.5 h-3.5 absolute start-2.5 top-1/2 -translate-y-1/2 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search ID or member..."
-              className="bg-bg-card border border-border rounded-lg pl-8 pr-3 py-1.5 text-xs text-text-primary placeholder-text-muted/50 focus:border-accent focus:outline-none w-52"
+              placeholder={t('executions.search')}
+              className="bg-bg-card border border-border rounded-lg ps-8 pe-3 py-1.5 text-xs text-text-primary placeholder-text-muted/50 focus:border-accent focus:outline-none w-52"
             />
           </div>
         </div>
@@ -271,14 +256,23 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
             onChange={e => setStatusFilter(e.target.value)}
             className="bg-bg-primary border border-border rounded-lg px-3 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
           >
-            {STATUS_FILTER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <option value="">{t('executions.allStatuses')}</option>
+            <option value="running">{t('executions.running')}</option>
+            <option value="success">{t('executions.success')}</option>
+            <option value="failed">{t('executions.failed')}</option>
+            <option value="hitl">{t('executions.needsHitl')}</option>
+            <option value="awaiting">{t('status.AWAITING_CUSTOMER')}</option>
+            <option value="cancelled">{t('status.CANCELLED')}</option>
           </select>
           <select
             value={priorityFilter}
             onChange={e => setPriorityFilter(e.target.value)}
             className="bg-bg-primary border border-border rounded-lg px-3 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
           >
-            {PRIORITY_FILTER_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            <option value="">{t('executions.allPriorities')}</option>
+            <option value="High">{t('priority.High')}</option>
+            <option value="Medium">{t('priority.Medium')}</option>
+            <option value="Low">{t('priority.Low')}</option>
           </select>
           <select
             value={fundTypeFilter}
@@ -290,9 +284,9 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
           {hasActiveFilters && (
             <button
               onClick={() => { setSearch(''); setStatusFilter(''); setPriorityFilter(''); setFundTypeFilter('') }}
-              className="text-[10px] text-text-muted hover:text-error transition-colors ml-auto"
+              className="text-[10px] text-text-muted hover:text-error transition-colors ms-auto"
             >
-              Clear all
+              {t('executions.clearAll')}
             </button>
           )}
         </div>
@@ -303,15 +297,15 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
         <table className="w-full text-sm">
           <thead>
             <tr className="text-text-muted text-[10px] uppercase border-b border-border">
-              <SortHeader field="processId">Process ID</SortHeader>
-              <SortHeader field="memberName">Member</SortHeader>
-              <SortHeader field="fundTypeLabel">Fund Type</SortHeader>
-              <SortHeader field="status">Status</SortHeader>
-              <SortHeader field="priority">Priority</SortHeader>
-              <SortHeader field="slaDeadline">SLA</SortHeader>
-              <SortHeader field="timestamp">Launched</SortHeader>
-              <SortHeader field="useCaseLabel">Action</SortHeader>
-              <th className="py-3 px-2 w-8 text-center text-text-muted text-[10px] uppercase">Sync</th>
+              <SortHeader field="processId">{t('executions.processId')}</SortHeader>
+              <SortHeader field="memberName">{t('executions.member')}</SortHeader>
+              <SortHeader field="fundTypeLabel">{t('executions.fundType')}</SortHeader>
+              <SortHeader field="status">{t('executions.status')}</SortHeader>
+              <SortHeader field="priority">{t('executions.priority')}</SortHeader>
+              <SortHeader field="slaDeadline">{t('executions.sla')}</SortHeader>
+              <SortHeader field="timestamp">{t('executions.launched')}</SortHeader>
+              <SortHeader field="useCaseLabel">{t('executions.action')}</SortHeader>
+              <th className="py-3 px-2 w-8 text-center text-text-muted text-[10px] uppercase">{t('executions.sync')}</th>
               <th className="py-3 px-3 w-10"></th>
             </tr>
           </thead>
@@ -319,17 +313,17 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
             {filtered.map(exec => {
               const statusCfg = STATUS_CONFIG[exec.status] || STATUS_CONFIG.RUNNING
               const priorityCfg = PRIORITY_CONFIG[exec.priority] || PRIORITY_CONFIG.Low
-              const sla = formatSlaRemaining(exec.slaDeadline, exec.contract)
+              const sla = formatSlaRemaining(exec.slaDeadline, exec.contract, t)
               const hitlCount = exec.validationStatuses?.filter(s => s === 'hitl_waiting').length || 0
               const isHitl = exec.status === 'PENDING_APPROVAL' || hitlCount > 0
-              const relTime = formatRelativeTime(exec.timestamp)
+              const relTime = formatRelativeTime(exec.timestamp, t)
 
               return (
                 <tr
                   key={exec.id}
                   onClick={() => onSelect(exec.id)}
                   className={`border-b border-border/50 hover:bg-bg-primary/50 cursor-pointer transition-colors ${
-                    isHitl ? 'border-l-2 border-l-warning' : ''
+                    isHitl ? 'border-s-2 border-s-warning' : ''
                   }`}
                 >
                   <td className="py-3 px-4 font-mono text-accent text-xs">{exec.processId}</td>
@@ -345,18 +339,18 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
                       ) : (
                         <span className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`} />
                       )}
-                      {statusCfg.label}
+                      {t(statusCfg.tKey)}
                       {hitlCount > 0 && ` (${hitlCount})`}
                     </span>
                   </td>
                   <td className="py-3 px-4">
                     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${priorityCfg.color}`}>
-                      {exec.priority}
+                      {t(`priority.${exec.priority}`, exec.priority)}
                     </span>
                   </td>
                   <td className={`py-3 px-4 text-xs font-mono ${sla.color}`}>
-                    {sla.warn && !sla.breached && <span className="mr-1">⚠️</span>}
-                    {sla.breached && <span className="mr-1">🔴</span>}
+                    {sla.warn && !sla.breached && <span className="me-1">⚠️</span>}
+                    {sla.breached && <span className="me-1">🔴</span>}
                     {sla.text}
                   </td>
                   <td className="py-3 px-4 text-xs text-text-muted">{relTime}</td>
@@ -388,12 +382,12 @@ export default function ExecutionsList({ executions, onSelect, onGoToBuilder, on
         </table>
         {filtered.length === 0 && executions.length > 0 && (
           <div className="py-8 text-center text-text-muted text-sm">
-            No executions match your filters.
+            {t('executions.noMatch')}
             <button
               onClick={() => { setSearch(''); setStatusFilter(''); setPriorityFilter(''); setFundTypeFilter('') }}
-              className="ml-2 text-accent hover:underline"
+              className="ms-2 text-accent hover:underline"
             >
-              Clear filters
+              {t('executions.clearFilters')}
             </button>
           </div>
         )}

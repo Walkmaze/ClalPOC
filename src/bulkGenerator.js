@@ -35,41 +35,41 @@ function randomFutureDate(minDays, maxDays) {
 
 // Common validation steps that get mixed into every flow
 const V = {
-  idPhoto:     { name: 'ID Photo Verification', category: 'identity', severity: 'blocking', source: 'ISA-DID-2024', rule: 'id_photo_confidence >= 90', field: 'id_photo_confidence', expected: '>= 90', description: 'Verify member identity via biometric photo match' },
-  bankAccount: { name: 'Bank Account Ownership', category: 'identity', severity: 'blocking', source: 'CL-1.1', rule: 'account_owner == member_name', field: 'account_owner', expected: 'match member_name', description: 'Verify destination bank account is registered to the member' },
-  age18:       { name: 'Age Verification', category: 'eligibility', severity: 'blocking', source: 'REG-2024-07', rule: 'age >= 18', field: 'birth_date', expected: 'age >= 18', description: 'Member must be at least 18 years old per regulatory requirements' },
-  retireAge:   { name: 'Retirement Age Check', category: 'eligibility', severity: 'blocking', source: 'CL-4.3', rule: 'age >= 62 for female / 67 for male', field: 'birth_date', expected: '>= retirement age', description: 'Standard withdrawal requires meeting retirement age threshold' },
-  balance:     { name: 'Balance Sufficiency', category: 'financial', severity: 'blocking', source: 'CL-3.8', rule: 'balance >= withdrawal_amount', field: 'balance', expected: '>= withdrawal_amount', description: 'Account must have sufficient balance to cover the withdrawal amount' },
-  minWithdraw: { name: 'Minimum Withdrawal Amount', category: 'financial', severity: 'blocking', source: 'CL-3.1', rule: 'withdrawal_amount >= 5000', field: 'withdrawal_amount', expected: '>= 5000', description: 'Withdrawal must meet the minimum amount defined in the contract' },
-  holdPeriod:  { name: 'Holding Period Check', category: 'eligibility', severity: 'blocking', source: 'CL-4.3', rule: 'holding_months >= 12', field: 'start_date', expected: '>= 12 months', description: 'Funds must be held for the minimum period before withdrawal' },
-  liquidity:   { name: 'Liquidity Date Check', category: 'eligibility', severity: 'blocking', source: 'CL-4.3', rule: 'liquidity_date <= today', field: 'liquidity_date', expected: '<= today', description: 'Funds only accessible after the contractual liquidity date' },
-  aml:         { name: 'AML Screening', category: 'regulatory', severity: 'info', source: 'REG-2024-07', rule: 'AML check passed', field: 'member_id', expected: 'clear', description: 'Anti-money laundering screening per ISA regulations' },
-  taxReport:   { name: 'Tax Reporting Threshold', category: 'regulatory', severity: 'info', source: 'TAX-856-2024', rule: 'annual_withdrawals_checked', field: 'withdrawal_amount', expected: 'reported if > 50000', description: 'Check if withdrawal triggers automatic tax authority reporting' },
-  partialLim:  { name: 'Partial Withdrawal Limit', category: 'regulatory', severity: 'warning', source: 'REG-PWL-2024', rule: 'partial_count <= 3 per year', field: 'withdrawal_amount', expected: 'within annual limit', description: 'Verify number of partial withdrawals does not exceed annual limit' },
-  transferPct: { name: 'Transfer Limit Check', category: 'financial', severity: 'blocking', source: 'CL-12.3', rule: 'transfer_percentage <= 50', field: 'transfer_percentage', expected: '<= 50', description: 'Single track transfer limited to percentage of source balance' },
-  trackCool:   { name: 'Track Switch Cooldown', category: 'eligibility', severity: 'blocking', source: 'CL-12.1', rule: 'days_since_last >= 30', field: 'days_since_last_transfer', expected: '>= 30', description: 'Minimum days between investment track transfers' },
-  annualTrans: { name: 'Annual Transfer Limit', category: 'eligibility', severity: 'warning', source: 'CL-12.5', rule: 'annual_transfers <= 4', field: 'annual_transfer_count', expected: '<= 4', description: 'Maximum number of track transfers per calendar year' },
-  suitability: { name: 'Investment Suitability', category: 'regulatory', severity: 'info', source: 'REG-INV-2024', rule: 'risk_profile_check', field: 'member_id', expected: 'suitable', description: 'Track transfer must be reviewed for member risk profile suitability' },
-  suppDocs:    { name: 'Supporting Documents', category: 'eligibility', severity: 'blocking', source: 'CL-30.1', rule: 'supporting_documents == true', field: 'supporting_documents', expected: 'true', description: 'Required documentation for early redemption must be provided' },
-  qualReason:  { name: 'Qualifying Reason', category: 'eligibility', severity: 'blocking', source: 'CL-30.5', rule: 'redemption_reason in qualifying_list', field: 'redemption_reason', expected: 'qualifying reason', description: 'Early redemption permitted only for qualifying reasons' },
-  taxCalc:     { name: 'Tax Calculation', category: 'financial', severity: 'info', source: 'CL-30.3', rule: 'calculate capital gains tax', field: 'redemption_amount', expected: 'tax calculated', description: 'Calculate applicable capital gains tax and fees' },
-  empGap:      { name: 'Employment Gap Check', category: 'eligibility', severity: 'blocking', source: 'CL-20.1', rule: 'gap_days <= 45', field: 'gap_days', expected: '<= 45', description: 'Employer transfer must occur within gap limit' },
-  empApproval: { name: 'Previous Employer Approval', category: 'processing', severity: 'blocking', source: 'CL-20.3', rule: 'employer_approval == true', field: 'employer_approval_received', expected: 'true', description: 'Written approval from previous employer required' },
-  minBalance:  { name: 'Minimum Remaining Balance', category: 'financial', severity: 'blocking', source: 'CL-3.8', rule: 'remaining_balance >= 0', field: 'balance', expected: '>= 0', description: 'Account must maintain minimum balance after withdrawal or be fully withdrawn' },
-  weekendCheck:{ name: 'Business Day Verification', category: 'processing', severity: 'info', source: 'CL-9.1', rule: 'request_day is business day', field: 'member_id', expected: 'business day', description: 'Requests on weekends/holidays are queued for next business day' },
-  digiId:      { name: 'Digital Identity Standard', category: 'regulatory', severity: 'info', source: 'ISA-DID-2024', rule: 'digital_id_compliant', field: 'id_photo_confidence', expected: 'compliant', description: 'Verify compliance with ISA Digital Identity Directive standards' },
+  idPhoto:     { name: 'ID Photo Verification', nameHe: 'אימות תמונת זהות', category: 'identity', severity: 'blocking', source: 'ISA-DID-2024', rule: 'id_photo_confidence >= 90', field: 'id_photo_confidence', expected: '>= 90', description: 'Verify member identity via biometric photo match', descriptionHe: 'אימות זהות העמית באמצעות התאמה ביומטרית של תמונה' },
+  bankAccount: { name: 'Bank Account Ownership', nameHe: 'בעלות על חשבון בנק', category: 'identity', severity: 'blocking', source: 'CL-1.1', rule: 'account_owner == member_name', field: 'account_owner', expected: 'match member_name', description: 'Verify destination bank account is registered to the member', descriptionHe: 'אימות שחשבון הבנק היעד רשום על שם העמית' },
+  age18:       { name: 'Age Verification', nameHe: 'אימות גיל', category: 'eligibility', severity: 'blocking', source: 'REG-2024-07', rule: 'age >= 18', field: 'birth_date', expected: 'age >= 18', description: 'Member must be at least 18 years old per regulatory requirements', descriptionHe: 'העמית חייב להיות בן 18 לפחות בהתאם לדרישות רגולטוריות' },
+  retireAge:   { name: 'Retirement Age Check', nameHe: 'בדיקת גיל פרישה', category: 'eligibility', severity: 'blocking', source: 'CL-4.3', rule: 'age >= 62 for female / 67 for male', field: 'birth_date', expected: '>= retirement age', description: 'Standard withdrawal requires meeting retirement age threshold', descriptionHe: 'משיכה רגילה מחייבת עמידה בסף גיל פרישה' },
+  balance:     { name: 'Balance Sufficiency', nameHe: 'בדיקת יתרה מספקת', category: 'financial', severity: 'blocking', source: 'CL-3.8', rule: 'balance >= withdrawal_amount', field: 'balance', expected: '>= withdrawal_amount', description: 'Account must have sufficient balance to cover the withdrawal amount', descriptionHe: 'בחשבון חייבת להיות יתרה מספקת לכיסוי סכום המשיכה' },
+  minWithdraw: { name: 'Minimum Withdrawal Amount', nameHe: 'סכום משיכה מינימלי', category: 'financial', severity: 'blocking', source: 'CL-3.1', rule: 'withdrawal_amount >= 5000', field: 'withdrawal_amount', expected: '>= 5000', description: 'Withdrawal must meet the minimum amount defined in the contract', descriptionHe: 'המשיכה חייבת לעמוד בסכום המינימלי המוגדר בחוזה' },
+  holdPeriod:  { name: 'Holding Period Check', nameHe: 'בדיקת תקופת החזקה', category: 'eligibility', severity: 'blocking', source: 'CL-4.3', rule: 'holding_months >= 12', field: 'start_date', expected: '>= 12 months', description: 'Funds must be held for the minimum period before withdrawal', descriptionHe: 'הכספים חייבים להיות מוחזקים לתקופה מינימלית לפני משיכה' },
+  liquidity:   { name: 'Liquidity Date Check', nameHe: 'בדיקת תאריך נזילות', category: 'eligibility', severity: 'blocking', source: 'CL-4.3', rule: 'liquidity_date <= today', field: 'liquidity_date', expected: '<= today', description: 'Funds only accessible after the contractual liquidity date', descriptionHe: 'הכספים נגישים רק לאחר תאריך הנזילות החוזי' },
+  aml:         { name: 'AML Screening', nameHe: 'סינון איסור הלבנת הון', category: 'regulatory', severity: 'info', source: 'REG-2024-07', rule: 'AML check passed', field: 'member_id', expected: 'clear', description: 'Anti-money laundering screening per ISA regulations', descriptionHe: 'סינון איסור הלבנת הון בהתאם לתקנות רשות שוק ההון' },
+  taxReport:   { name: 'Tax Reporting Threshold', nameHe: 'סף דיווח מס', category: 'regulatory', severity: 'info', source: 'TAX-856-2024', rule: 'annual_withdrawals_checked', field: 'withdrawal_amount', expected: 'reported if > 50000', description: 'Check if withdrawal triggers automatic tax authority reporting', descriptionHe: 'בדיקה אם המשיכה מפעילה דיווח אוטומטי לרשות המסים' },
+  partialLim:  { name: 'Partial Withdrawal Limit', nameHe: 'מגבלת משיכה חלקית', category: 'regulatory', severity: 'warning', source: 'REG-PWL-2024', rule: 'partial_count <= 3 per year', field: 'withdrawal_amount', expected: 'within annual limit', description: 'Verify number of partial withdrawals does not exceed annual limit', descriptionHe: 'אימות שמספר המשיכות החלקיות אינו חורג מהמגבלה השנתית' },
+  transferPct: { name: 'Transfer Limit Check', nameHe: 'בדיקת מגבלת העברה', category: 'financial', severity: 'blocking', source: 'CL-12.3', rule: 'transfer_percentage <= 50', field: 'transfer_percentage', expected: '<= 50', description: 'Single track transfer limited to percentage of source balance', descriptionHe: 'העברה בין מסלולים מוגבלת לאחוז מיתרת המקור' },
+  trackCool:   { name: 'Track Switch Cooldown', nameHe: 'תקופת צינון החלפת מסלול', category: 'eligibility', severity: 'blocking', source: 'CL-12.1', rule: 'days_since_last >= 30', field: 'days_since_last_transfer', expected: '>= 30', description: 'Minimum days between investment track transfers', descriptionHe: 'מספר ימים מינימלי בין העברות בין מסלולי השקעה' },
+  annualTrans: { name: 'Annual Transfer Limit', nameHe: 'מגבלת העברות שנתית', category: 'eligibility', severity: 'warning', source: 'CL-12.5', rule: 'annual_transfers <= 4', field: 'annual_transfer_count', expected: '<= 4', description: 'Maximum number of track transfers per calendar year', descriptionHe: 'מספר מקסימלי של העברות בין מסלולים בשנה קלנדרית' },
+  suitability: { name: 'Investment Suitability', nameHe: 'התאמת השקעה', category: 'regulatory', severity: 'info', source: 'REG-INV-2024', rule: 'risk_profile_check', field: 'member_id', expected: 'suitable', description: 'Track transfer must be reviewed for member risk profile suitability', descriptionHe: 'העברה בין מסלולים חייבת להיבדק להתאמה לפרופיל הסיכון של העמית' },
+  suppDocs:    { name: 'Supporting Documents', nameHe: 'מסמכים תומכים', category: 'eligibility', severity: 'blocking', source: 'CL-30.1', rule: 'supporting_documents == true', field: 'supporting_documents', expected: 'true', description: 'Required documentation for early redemption must be provided', descriptionHe: 'יש לספק תיעוד נדרש לפדיון מוקדם' },
+  qualReason:  { name: 'Qualifying Reason', nameHe: 'סיבה מזכה', category: 'eligibility', severity: 'blocking', source: 'CL-30.5', rule: 'redemption_reason in qualifying_list', field: 'redemption_reason', expected: 'qualifying reason', description: 'Early redemption permitted only for qualifying reasons', descriptionHe: 'פדיון מוקדם מותר רק מסיבות מזכות' },
+  taxCalc:     { name: 'Tax Calculation', nameHe: 'חישוב מס', category: 'financial', severity: 'info', source: 'CL-30.3', rule: 'calculate capital gains tax', field: 'redemption_amount', expected: 'tax calculated', description: 'Calculate applicable capital gains tax and fees', descriptionHe: 'חישוב מס רווחי הון ועמלות החלים' },
+  empGap:      { name: 'Employment Gap Check', nameHe: 'בדיקת פער העסקה', category: 'eligibility', severity: 'blocking', source: 'CL-20.1', rule: 'gap_days <= 45', field: 'gap_days', expected: '<= 45', description: 'Employer transfer must occur within gap limit', descriptionHe: 'העברה בין מעסיקים חייבת להתבצע בתוך מגבלת הפער' },
+  empApproval: { name: 'Previous Employer Approval', nameHe: 'אישור מעסיק קודם', category: 'processing', severity: 'blocking', source: 'CL-20.3', rule: 'employer_approval == true', field: 'employer_approval_received', expected: 'true', description: 'Written approval from previous employer required', descriptionHe: 'נדרש אישור בכתב מהמעסיק הקודם' },
+  minBalance:  { name: 'Minimum Remaining Balance', nameHe: 'יתרה מינימלית נותרת', category: 'financial', severity: 'blocking', source: 'CL-3.8', rule: 'remaining_balance >= 0', field: 'balance', expected: '>= 0', description: 'Account must maintain minimum balance after withdrawal or be fully withdrawn', descriptionHe: 'החשבון חייב לשמור על יתרה מינימלית לאחר משיכה או להימשך במלואו' },
+  weekendCheck:{ name: 'Business Day Verification', nameHe: 'אימות יום עסקים', category: 'processing', severity: 'info', source: 'CL-9.1', rule: 'request_day is business day', field: 'member_id', expected: 'business day', description: 'Requests on weekends/holidays are queued for next business day', descriptionHe: 'בקשות בסופי שבוע/חגים ממתינות ליום העסקים הבא' },
+  digiId:      { name: 'Digital Identity Standard', nameHe: 'תקן זהות דיגיטלית', category: 'regulatory', severity: 'info', source: 'ISA-DID-2024', rule: 'digital_id_compliant', field: 'id_photo_confidence', expected: 'compliant', description: 'Verify compliance with ISA Digital Identity Directive standards', descriptionHe: 'אימות עמידה בתקני הנחיית הזהות הדיגיטלית של רשות שוק ההון' },
 }
 
 const HITL_STEPS_COMPLIANCE = [
-  { step_id: 'h1', title: 'Verify member identity', description: 'Confirm member identity matches records', fields: [{ name: 'id_verified', type: 'select', label: 'Identity verified?', options: ['Verified', 'Mismatch', 'Unable to verify'] }, { name: 'verification_notes', type: 'textarea', label: 'Verification notes' }] },
-  { step_id: 'h2', title: 'Review transaction legitimacy', description: 'Check for fraud indicators and compliance', fields: [{ name: 'fraud_check', type: 'select', label: 'Fraud indicators?', options: ['None detected', 'Suspicious patterns', 'Confirmed fraud'] }, { name: 'risk_level', type: 'select', label: 'Risk assessment', options: ['Low', 'Medium', 'High'] }, { name: 'review_notes', type: 'textarea', label: 'Review notes' }] },
-  { step_id: 'h3', title: 'Final decision', description: 'Approve or reject the transaction', fields: [{ name: 'decision', type: 'select', label: 'Decision', options: ['Approve', 'Reject', 'Escalate further'] }, { name: 'reason', type: 'textarea', label: 'Decision justification' }] },
+  { step_id: 'h1', title: 'Verify member identity', titleHe: 'אימות זהות עמית', description: 'Confirm member identity matches records', descriptionHe: 'אישור שזהות העמית תואמת לרשומות', fields: [{ name: 'id_verified', type: 'select', label: 'Identity verified?', labelHe: 'זהות אומתה?', options: ['Verified', 'Mismatch', 'Unable to verify'] }, { name: 'verification_notes', type: 'textarea', label: 'Verification notes', labelHe: 'הערות אימות' }] },
+  { step_id: 'h2', title: 'Review transaction legitimacy', titleHe: 'בדיקת לגיטימיות העסקה', description: 'Check for fraud indicators and compliance', descriptionHe: 'בדיקת סממני הונאה וציות', fields: [{ name: 'fraud_check', type: 'select', label: 'Fraud indicators?', labelHe: 'סממני הונאה?', options: ['None detected', 'Suspicious patterns', 'Confirmed fraud'] }, { name: 'risk_level', type: 'select', label: 'Risk assessment', labelHe: 'הערכת סיכון', options: ['Low', 'Medium', 'High'] }, { name: 'review_notes', type: 'textarea', label: 'Review notes', labelHe: 'הערות בדיקה' }] },
+  { step_id: 'h3', title: 'Final decision', titleHe: 'החלטה סופית', description: 'Approve or reject the transaction', descriptionHe: 'אישור או דחייה של העסקה', fields: [{ name: 'decision', type: 'select', label: 'Decision', labelHe: 'החלטה', options: ['Approve', 'Reject', 'Escalate further'] }, { name: 'reason', type: 'textarea', label: 'Decision justification', labelHe: 'נימוק ההחלטה' }] },
 ]
 
 const HITL_STEPS_FRAUD = [
-  { step_id: 'h1', title: 'Review transaction history', description: 'Analyze recent withdrawal patterns', fields: [{ name: 'pattern_analysis', type: 'select', label: 'Pattern assessment', options: ['Normal activity', 'Unusual frequency', 'Suspicious pattern'] }, { name: 'notes', type: 'textarea', label: 'Analysis notes' }] },
-  { step_id: 'h2', title: 'Contact verification', description: 'Verify customer contact information', fields: [{ name: 'contact_verified', type: 'select', label: 'Customer contacted?', options: ['Yes - confirmed', 'Yes - denied', 'Unable to reach'] }, { name: 'contact_notes', type: 'textarea', label: 'Contact notes' }] },
-  { step_id: 'h3', title: 'Final decision', description: 'Approve or reject the transaction', fields: [{ name: 'decision', type: 'select', label: 'Decision', options: ['Approve', 'Reject', 'Escalate further'] }, { name: 'reason', type: 'textarea', label: 'Decision justification' }] },
+  { step_id: 'h1', title: 'Review transaction history', titleHe: 'סקירת היסטוריית עסקאות', description: 'Analyze recent withdrawal patterns', descriptionHe: 'ניתוח דפוסי משיכות אחרונים', fields: [{ name: 'pattern_analysis', type: 'select', label: 'Pattern assessment', labelHe: 'הערכת דפוסים', options: ['Normal activity', 'Unusual frequency', 'Suspicious pattern'] }, { name: 'notes', type: 'textarea', label: 'Analysis notes', labelHe: 'הערות ניתוח' }] },
+  { step_id: 'h2', title: 'Contact verification', titleHe: 'אימות פרטי קשר', description: 'Verify customer contact information', descriptionHe: 'אימות פרטי התקשרות הלקוח', fields: [{ name: 'contact_verified', type: 'select', label: 'Customer contacted?', labelHe: 'נוצר קשר עם הלקוח?', options: ['Yes - confirmed', 'Yes - denied', 'Unable to reach'] }, { name: 'contact_notes', type: 'textarea', label: 'Contact notes', labelHe: 'הערות קשר' }] },
+  { step_id: 'h3', title: 'Final decision', titleHe: 'החלטה סופית', description: 'Approve or reject the transaction', descriptionHe: 'אישור או דחייה של העסקה', fields: [{ name: 'decision', type: 'select', label: 'Decision', labelHe: 'החלטה', options: ['Approve', 'Reject', 'Escalate further'] }, { name: 'reason', type: 'textarea', label: 'Decision justification', labelHe: 'נימוק ההחלטה' }] },
 ]
 
 // Pre-computed validation flows — 7-10 validations each
@@ -91,11 +91,11 @@ const PRECOMPUTED_FLOWS = {
   ],
   hitl_compliance: [
     V.idPhoto, V.bankAccount, V.age18, V.digiId, V.balance, V.minWithdraw, V.holdPeriod, V.aml, V.taxReport,
-    { name: 'High-Value Compliance Review', category: 'contract', severity: 'warning', source: 'CL-HITL-1', rule: 'withdrawal_amount > threshold', field: 'withdrawal_amount', expected: 'manual review', description: 'Amount exceeds compliance review threshold — manual review required', requires_hitl: true, hitl_reason: 'Withdrawal amount exceeds manual review threshold per contract clause CL-HITL-1', hitl_steps: HITL_STEPS_COMPLIANCE },
+    { name: 'High-Value Compliance Review', nameHe: 'בדיקת ציות לסכום גבוה', category: 'contract', severity: 'warning', source: 'CL-HITL-1', rule: 'withdrawal_amount > threshold', field: 'withdrawal_amount', expected: 'manual review', description: 'Amount exceeds compliance review threshold — manual review required', descriptionHe: 'הסכום חורג מסף בדיקת הציות — נדרשת בדיקה ידנית', requires_hitl: true, hitl_reason: 'Withdrawal amount exceeds manual review threshold per contract clause CL-HITL-1', hitl_reasonHe: 'סכום המשיכה חורג מסף הבדיקה הידנית בהתאם לסעיף חוזה CL-HITL-1', hitl_steps: HITL_STEPS_COMPLIANCE },
   ],
   hitl_fraud: [
     V.idPhoto, V.bankAccount, V.age18, V.digiId, V.balance, V.minWithdraw, V.aml, V.taxReport,
-    { name: 'Fraud Pattern Review', category: 'contract', severity: 'warning', source: 'CL-HITL-3', rule: 'recent_withdrawal_count > 2', field: 'recent_withdrawal_count', expected: 'manual review', description: 'Multiple recent withdrawals detected — fraud review required', requires_hitl: true, hitl_reason: 'Multiple withdrawal requests detected — fraud review required per CL-HITL-3', hitl_steps: HITL_STEPS_FRAUD },
+    { name: 'Fraud Pattern Review', nameHe: 'בדיקת דפוס הונאה', category: 'contract', severity: 'warning', source: 'CL-HITL-3', rule: 'recent_withdrawal_count > 2', field: 'recent_withdrawal_count', expected: 'manual review', description: 'Multiple recent withdrawals detected — fraud review required', descriptionHe: 'זוהו משיכות מרובות לאחרונה — נדרשת בדיקת הונאה', requires_hitl: true, hitl_reason: 'Multiple withdrawal requests detected — fraud review required per CL-HITL-3', hitl_reasonHe: 'זוהו בקשות משיכה מרובות — נדרשת בדיקת הונאה בהתאם ל-CL-HITL-3', hitl_steps: HITL_STEPS_FRAUD },
   ],
   awaiting_id: [
     V.idPhoto, V.bankAccount, V.age18, V.digiId, V.balance, V.minWithdraw, V.holdPeriod, V.minBalance, V.aml,
@@ -131,23 +131,24 @@ function executePrecomputedFlow(validations, memberData, targetOutcome, flowKey)
         results.push(null)
       } else {
         statuses.push('pass')
-        results.push({ passed: true, actual_value: 'Auto-cleared', message: 'Within threshold — no manual review needed' })
+        results.push({ passed: true, actual_value: 'Auto-cleared', message: 'Within threshold — no manual review needed', messageHe: 'בתוך הסף — לא נדרשת בדיקה ידנית' })
       }
       continue
     }
 
     // Generate realistic actual values and messages
-    const { actualValue, passMessage, failMessage } = getFieldDisplay(v, memberData)
+    const { actualValue, passMessage, passMessageHe, failMessage, failMessageHe } = getFieldDisplay(v, memberData)
 
     // Decide pass or fail
     const isFailPoint = failField && v.field === failField
     const passed = isFailPoint ? false : true
 
     const message = passed ? passMessage : failMessage
+    const messageHe = passed ? passMessageHe : failMessageHe
     const status = passed ? 'pass' : (v.severity === 'warning' ? 'warning' : 'fail')
 
     statuses.push(status)
-    results.push({ passed, actual_value: actualValue, message })
+    results.push({ passed, actual_value: actualValue, message, messageHe })
   }
 
   return { statuses, results }
@@ -162,45 +163,45 @@ function getFieldDisplay(v, md) {
   switch (field) {
     case 'id_photo_confidence': {
       const conf = md.id_photo_confidence || 50
-      return { actualValue: `${conf}%`, passMessage: `Identity verified (${conf}% confidence)`, failMessage: `ID photo confidence ${conf}% below 90% threshold` }
+      return { actualValue: `${conf}%`, passMessage: `Identity verified (${conf}% confidence)`, passMessageHe: `זהות אומתה (${conf}% ביטחון)`, failMessage: `ID photo confidence ${conf}% below 90% threshold`, failMessageHe: `ביטחון תמונת זהות ${conf}% מתחת לסף 90%` }
     }
     case 'account_owner':
-      return { actualValue: md.account_owner || md.member_name, passMessage: 'Bank account owner matches member', failMessage: 'Bank account owner mismatch' }
+      return { actualValue: md.account_owner || md.member_name, passMessage: 'Bank account owner matches member', passMessageHe: 'בעל חשבון הבנק תואם לעמית', failMessage: 'Bank account owner mismatch', failMessageHe: 'אי-התאמה בבעלות חשבון הבנק' }
     case 'birth_date': {
       const retAge = md.gender === 'female' ? 62 : 67
       if (v.rule?.includes('retirement') || v.rule?.includes('62') || v.rule?.includes('67'))
-        return { actualValue: String(age), passMessage: `Age ${age} meets retirement age ${retAge}`, failMessage: `Age ${age} below retirement age ${retAge}` }
-      return { actualValue: String(age), passMessage: `Age ${age} meets minimum requirement`, failMessage: `Age ${age} below minimum 18` }
+        return { actualValue: String(age), passMessage: `Age ${age} meets retirement age ${retAge}`, passMessageHe: `גיל ${age} עומד בגיל פרישה ${retAge}`, failMessage: `Age ${age} below retirement age ${retAge}`, failMessageHe: `גיל ${age} מתחת לגיל פרישה ${retAge}` }
+      return { actualValue: String(age), passMessage: `Age ${age} meets minimum requirement`, passMessageHe: `גיל ${age} עומד בדרישת המינימום`, failMessage: `Age ${age} below minimum 18`, failMessageHe: `גיל ${age} מתחת למינימום 18` }
     }
     case 'balance':
-      return { actualValue: `₪${bal.toLocaleString()}`, passMessage: `Balance ₪${bal.toLocaleString()} sufficient for ₪${amt.toLocaleString()}`, failMessage: `Insufficient balance ₪${bal.toLocaleString()} for ₪${amt.toLocaleString()}` }
+      return { actualValue: `₪${bal.toLocaleString()}`, passMessage: `Balance ₪${bal.toLocaleString()} sufficient for ₪${amt.toLocaleString()}`, passMessageHe: `יתרה ₪${bal.toLocaleString()} מספקת עבור ₪${amt.toLocaleString()}`, failMessage: `Insufficient balance ₪${bal.toLocaleString()} for ₪${amt.toLocaleString()}`, failMessageHe: `יתרה לא מספקת ₪${bal.toLocaleString()} עבור ₪${amt.toLocaleString()}` }
     case 'withdrawal_amount':
-      return { actualValue: `₪${amt.toLocaleString()}`, passMessage: `₪${amt.toLocaleString()} meets minimum withdrawal`, failMessage: `₪${amt.toLocaleString()} below minimum withdrawal` }
+      return { actualValue: `₪${amt.toLocaleString()}`, passMessage: `₪${amt.toLocaleString()} meets minimum withdrawal`, passMessageHe: `₪${amt.toLocaleString()} עומד במשיכה מינימלית`, failMessage: `₪${amt.toLocaleString()} below minimum withdrawal`, failMessageHe: `₪${amt.toLocaleString()} מתחת למשיכה מינימלית` }
     case 'liquidity_date':
-      return { actualValue: md.liquidity_date || 'N/A', passMessage: 'Liquidity date reached', failMessage: `Liquidity date ${md.liquidity_date} not yet reached` }
+      return { actualValue: md.liquidity_date || 'N/A', passMessage: 'Liquidity date reached', passMessageHe: 'תאריך נזילות הגיע', failMessage: `Liquidity date ${md.liquidity_date} not yet reached`, failMessageHe: `תאריך נזילות ${md.liquidity_date} טרם הגיע` }
     case 'start_date': {
       const start = md.start_date ? new Date(md.start_date) : new Date()
       const months = Math.max(0, Math.floor((Date.now() - start) / (30.44 * 86400000)))
-      return { actualValue: `${months} months`, passMessage: `Holding period ${months} months meets requirement`, failMessage: `Only ${months} months held, minimum 12 required` }
+      return { actualValue: `${months} months`, passMessage: `Holding period ${months} months meets requirement`, passMessageHe: `תקופת החזקה ${months} חודשים עומדת בדרישה`, failMessage: `Only ${months} months held, minimum 12 required`, failMessageHe: `רק ${months} חודשי החזקה, נדרשים לפחות 12` }
     }
     case 'transfer_percentage': {
       const pct = md.transfer_percentage || 20
-      return { actualValue: `${pct}%`, passMessage: `Transfer ${pct}% within 50% limit`, failMessage: `Transfer ${pct}% exceeds 50% limit` }
+      return { actualValue: `${pct}%`, passMessage: `Transfer ${pct}% within 50% limit`, passMessageHe: `העברה ${pct}% בתוך מגבלת 50%`, failMessage: `Transfer ${pct}% exceeds 50% limit`, failMessageHe: `העברה ${pct}% חורגת ממגבלת 50%` }
     }
     case 'supporting_documents':
-      return { actualValue: String(!!md.supporting_documents), passMessage: 'Supporting documents provided', failMessage: 'Missing required documents' }
+      return { actualValue: String(!!md.supporting_documents), passMessage: 'Supporting documents provided', passMessageHe: 'מסמכים תומכים סופקו', failMessage: 'Missing required documents', failMessageHe: 'חסרים מסמכים נדרשים' }
     case 'redemption_reason':
-      return { actualValue: md.redemption_reason || 'N/A', passMessage: `Qualifying reason: ${md.redemption_reason}`, failMessage: 'Non-qualifying reason for early redemption' }
+      return { actualValue: md.redemption_reason || 'N/A', passMessage: `Qualifying reason: ${md.redemption_reason}`, passMessageHe: `סיבה מזכה: ${md.redemption_reason}`, failMessage: 'Non-qualifying reason for early redemption', failMessageHe: 'סיבה לא מזכה לפדיון מוקדם' }
     case 'redemption_amount': {
       const tax = Math.round((md.redemption_amount || 0) * 0.3)
-      return { actualValue: `₪${tax.toLocaleString()} tax`, passMessage: `30% capital gains tax on ₪${(md.redemption_amount || 0).toLocaleString()}`, failMessage: 'Tax calculation error' }
+      return { actualValue: `₪${tax.toLocaleString()} tax`, passMessage: `30% capital gains tax on ₪${(md.redemption_amount || 0).toLocaleString()}`, passMessageHe: `30% מס רווחי הון על ₪${(md.redemption_amount || 0).toLocaleString()}`, failMessage: 'Tax calculation error', failMessageHe: 'שגיאה בחישוב מס' }
     }
     case 'gap_days':
-      return { actualValue: `${md.gap_days || 0} days`, passMessage: `Employment gap ${md.gap_days || 0} days within limit`, failMessage: `Employment gap ${md.gap_days || 0} days exceeds limit` }
+      return { actualValue: `${md.gap_days || 0} days`, passMessage: `Employment gap ${md.gap_days || 0} days within limit`, passMessageHe: `פער העסקה ${md.gap_days || 0} ימים בתוך המגבלה`, failMessage: `Employment gap ${md.gap_days || 0} days exceeds limit`, failMessageHe: `פער העסקה ${md.gap_days || 0} ימים חורג מהמגבלה` }
     case 'employer_approval_received':
-      return { actualValue: String(!!md.employer_approval_received), passMessage: 'Employer approval received', failMessage: 'Missing employer approval' }
+      return { actualValue: String(!!md.employer_approval_received), passMessage: 'Employer approval received', passMessageHe: 'אישור מעסיק התקבל', failMessage: 'Missing employer approval', failMessageHe: 'חסר אישור מעסיק' }
     default:
-      return { actualValue: 'OK', passMessage: `${v.name} — check passed`, failMessage: `${v.name} — check failed` }
+      return { actualValue: 'OK', passMessage: `${v.name} — check passed`, passMessageHe: `${v.nameHe || v.name} — בדיקה עברה`, failMessage: `${v.name} — check failed`, failMessageHe: `${v.nameHe || v.name} — בדיקה נכשלה` }
   }
 }
 
@@ -209,24 +210,25 @@ function determineDemoOutcome(targetOutcome, validations, statuses, results, mem
   if (targetOutcome === 'running') return null // still executing
 
   if (targetOutcome === 'awaiting_customer') {
-    return { type: 'customer_action', subtype: 'id_photo', message: `ID photo verification failed (${memberData.id_photo_confidence}% confidence). Customer needs to upload a clear ID photo.` }
+    return { type: 'customer_action', subtype: 'id_photo', message: `ID photo verification failed (${memberData.id_photo_confidence}% confidence). Customer needs to upload a clear ID photo.`, messageHe: `אימות תמונת זהות נכשל (${memberData.id_photo_confidence}% ביטחון). הלקוח צריך להעלות תמונת זהות ברורה.` }
   }
 
   if (targetOutcome === 'tax_consent') {
     const amt = memberData.redemption_amount || 100000
     const taxRate = 30
     const tax = Math.round(amt * taxRate / 100)
-    return { type: 'tax_consent', message: 'Early redemption approved pending tax consent.', breakdown: { gross: amt, tax, taxRate, fee: 0, feeRate: 0, net: amt - tax } }
+    return { type: 'tax_consent', message: 'Early redemption approved pending tax consent.', messageHe: 'פדיון מוקדם אושר בהמתנה להסכמת מס.', breakdown: { gross: amt, tax, taxRate, fee: 0, feeRate: 0, net: amt - tax } }
   }
 
   if (targetOutcome === 'failed') {
     const failIdx = statuses.findIndex(s => s === 'fail')
     const failMsg = failIdx >= 0 && results[failIdx] ? results[failIdx].message : 'Validation failed'
-    return { type: 'blocked', message: `Process blocked — ${failMsg}` }
+    const failMsgHe = failIdx >= 0 && results[failIdx] ? (results[failIdx].messageHe || results[failIdx].message) : 'אימות נכשל'
+    return { type: 'blocked', message: `Process blocked — ${failMsg}`, messageHe: `התהליך נחסם — ${failMsgHe}` }
   }
 
   // success
-  return { type: 'approved', message: 'All validations passed. Process completed successfully.' }
+  return { type: 'approved', message: 'All validations passed. Process completed successfully.', messageHe: 'כל האימותים עברו בהצלחה. התהליך הושלם בהצלחה.' }
 }
 
 function determineDemoStatus(targetOutcome) {
@@ -364,17 +366,17 @@ export function generateBulkScenarios(count) {
     const ts = launchedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
     const auditEntries = [
-      { action: 'Request intake', category: 'system', source: '—', result: 'SUCCESS', details: 'Process initiated', timestamp: ts },
+      { action: 'Request intake', actionHe: 'קליטת בקשה', category: 'system', source: '—', result: 'SUCCESS', details: 'Process initiated', detailsHe: 'התהליך הופעל', timestamp: ts },
     ]
     validations.forEach((v, idx) => {
       if (statuses[idx] === 'hitl_waiting') {
-        auditEntries.push({ action: v.name, category: 'hitl', source: v.source || '—', result: 'PAUSED', details: v.hitl_reason || 'Waiting for human review', timestamp: ts })
+        auditEntries.push({ action: v.name, actionHe: v.nameHe || v.name, category: 'hitl', source: v.source || '—', result: 'PAUSED', details: v.hitl_reason || 'Waiting for human review', detailsHe: v.hitl_reasonHe || 'ממתין לבדיקה ידנית', timestamp: ts })
       } else if (statuses[idx] && statuses[idx] !== 'pending') {
-        auditEntries.push({ action: v.name, category: v.category, source: v.source || '—', result: statuses[idx].toUpperCase(), details: results[idx]?.message || '', timestamp: ts })
+        auditEntries.push({ action: v.name, actionHe: v.nameHe || v.name, category: v.category, source: v.source || '—', result: statuses[idx].toUpperCase(), details: results[idx]?.message || '', detailsHe: results[idx]?.messageHe || '', timestamp: ts })
       }
     })
     if (outcome) {
-      auditEntries.push({ action: 'Outcome determination', category: 'system', source: '—', result: outcome.type === 'approved' ? 'SUCCESS' : outcome.type === 'blocked' ? 'FAIL' : 'WARNING', details: outcome.message, timestamp: ts })
+      auditEntries.push({ action: 'Outcome determination', actionHe: 'קביעת תוצאה', category: 'system', source: '—', result: outcome.type === 'approved' ? 'SUCCESS' : outcome.type === 'blocked' ? 'FAIL' : 'WARNING', details: outcome.message, detailsHe: outcome.messageHe || outcome.message, timestamp: ts })
     }
 
     scenarios.push({
@@ -393,7 +395,7 @@ export function generateBulkScenarios(count) {
       memberData,
       contract,
       regulations,
-      analysisMessages: [{ icon: '✅', text: `Flow completed: ${validations.length} validation steps`, done: true }],
+      analysisMessages: [{ icon: '✅', text: `Flow completed: ${validations.length} validation steps`, textHe: `התהליך הושלם: ${validations.length} שלבי אימות`, done: true }],
       validations,
       validationStatuses: statuses,
       validationResults: results,

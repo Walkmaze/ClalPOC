@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useT, useLoc } from './i18n'
 
 const FIELD_RENDERERS = {
   text: ({ field, value, onChange }) => (
@@ -62,6 +63,7 @@ const FIELD_RENDERERS = {
   ),
   file: ({ field, value, onChange }) => {
     const [fileName, setFileName] = useState(value || '')
+    const t = useT()
     return (
       <div
         className="w-full bg-bg-primary border border-dashed border-border rounded-lg px-3 py-4 text-center cursor-pointer hover:border-accent/50 transition-colors"
@@ -77,7 +79,7 @@ const FIELD_RENDERERS = {
             <span className="text-sm text-text-primary">{fileName}</span>
           </div>
         ) : (
-          <span className="text-xs text-text-muted">Click to simulate file upload</span>
+          <span className="text-xs text-text-muted">{t('hitl.uploadFile')}</span>
         )}
       </div>
     )
@@ -87,8 +89,9 @@ const FIELD_RENDERERS = {
 function StepCard({ step, stepIndex, totalSteps, state, formData, onFieldChange, onNext, onSubmit }) {
   const isCurrent = state === 'current'
   const isCompleted = state === 'completed'
-  const isLocked = state === 'locked'
   const isLast = stepIndex === totalSteps - 1
+  const t = useT()
+  const loc = useLoc()
 
   return (
     <div
@@ -110,10 +113,10 @@ function StepCard({ step, stepIndex, totalSteps, state, formData, onFieldChange,
           </div>
           <div>
             <h4 className={`text-sm font-semibold ${isCurrent ? 'text-text-primary' : isCompleted ? 'text-success' : 'text-text-muted'}`}>
-              {step.title}
+              {loc(step, 'title')}
             </h4>
             {!isCurrent && !isCompleted && (
-              <p className="text-[10px] text-text-muted">Complete previous step first</p>
+              <p className="text-[10px] text-text-muted">{t('hitl.locked')}</p>
             )}
           </div>
         </div>
@@ -128,8 +131,8 @@ function StepCard({ step, stepIndex, totalSteps, state, formData, onFieldChange,
               if (!val && val !== false && val !== 0) return null
               return (
                 <div key={field.name} className="flex gap-1.5">
-                  <span className="text-success/70">{field.label}:</span>
-                  <span className="text-text-primary">{typeof val === 'boolean' ? (val ? 'Yes' : 'No') : String(val)}</span>
+                  <span className="text-success/70">{loc(field, 'label')}:</span>
+                  <span className="text-text-primary">{typeof val === 'boolean' ? (val ? t('hitl.yes') : t('hitl.no')) : String(val)}</span>
                 </div>
               )
             })}
@@ -140,13 +143,13 @@ function StepCard({ step, stepIndex, totalSteps, state, formData, onFieldChange,
       {/* Current step form */}
       {isCurrent && (
         <div className="px-4 pb-4 space-y-3 animate-fade-in-up">
-          <p className="text-xs text-text-muted">{step.description}</p>
+          <p className="text-xs text-text-muted">{loc(step, 'description')}</p>
           {step.fields.map(field => {
             const Renderer = FIELD_RENDERERS[field.type] || FIELD_RENDERERS.text
             return (
               <div key={field.name}>
                 {field.type !== 'checkbox' && (
-                  <label className="block text-xs text-text-muted mb-1">{field.label}</label>
+                  <label className="block text-xs text-text-muted mb-1">{loc(field, 'label')}</label>
                 )}
                 <Renderer field={field} value={formData?.[field.name]} onChange={onFieldChange} />
               </div>
@@ -158,14 +161,14 @@ function StepCard({ step, stepIndex, totalSteps, state, formData, onFieldChange,
                 onClick={onSubmit}
                 className="bg-success hover:bg-success/80 text-bg-primary font-semibold rounded-lg px-5 py-2 text-sm transition-colors"
               >
-                Submit Review
+                {t('hitl.submit')}
               </button>
             ) : (
               <button
                 onClick={onNext}
                 className="bg-accent hover:bg-accent/80 text-bg-primary font-semibold rounded-lg px-5 py-2 text-sm transition-colors flex items-center gap-1.5"
               >
-                Next Step <span>→</span>
+                {t('hitl.next')} <span>→</span>
               </button>
             )}
           </div>
@@ -179,6 +182,8 @@ export default function HitlPanel({ validation, validationIndex, onResolve, onCl
   const [currentStep, setCurrentStep] = useState(0)
   const [stepData, setStepData] = useState({})
   const [submitted, setSubmitted] = useState(false)
+  const t = useT()
+  const loc = useLoc()
 
   const steps = validation?.hitl_steps || []
 
@@ -226,26 +231,26 @@ export default function HitlPanel({ validation, validationIndex, onResolve, onCl
 
   if (submitted) {
     return (
-      <div className="w-96 bg-bg-card border-l-2 border-accent h-full overflow-y-auto p-5 shrink-0 animate-fade-in-up">
+      <div className="w-96 bg-bg-card border-s-2 border-accent h-full overflow-y-auto p-5 shrink-0 animate-fade-in-up">
         <div className="flex flex-col items-center justify-center py-12">
           <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mb-4 animate-scale-in">
             <span className="text-3xl">✓</span>
           </div>
-          <h3 className="text-lg font-bold text-success mb-2">Review Submitted</h3>
-          <p className="text-sm text-text-muted text-center">The flow will continue based on your decision.</p>
+          <h3 className="text-lg font-bold text-success mb-2">{t('hitl.submitted')}</h3>
+          <p className="text-sm text-text-muted text-center">{t('hitl.submitted.desc')}</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="w-96 bg-bg-card border-l-2 border-accent h-full overflow-y-auto shrink-0">
+    <div className="w-96 bg-bg-card border-s-2 border-accent h-full overflow-y-auto shrink-0">
       {/* Header */}
       <div className="sticky top-0 bg-bg-card z-10 p-4 border-b border-border">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <span className="text-lg">👤</span>
-            <h3 className="text-sm font-bold text-text-primary">Human Review</h3>
+            <h3 className="text-sm font-bold text-text-primary">{t('hitl.title')}</h3>
           </div>
           <button
             onClick={onClose}
@@ -255,12 +260,12 @@ export default function HitlPanel({ validation, validationIndex, onResolve, onCl
           </button>
         </div>
 
-        <h4 className="text-sm font-semibold text-accent mb-1">{validation.name}</h4>
-        <p className="text-xs text-text-muted mb-3">{validation.hitl_reason}</p>
+        <h4 className="text-sm font-semibold text-accent mb-1">{loc(validation, 'name')}</h4>
+        <p className="text-xs text-text-muted mb-3">{loc(validation, 'hitl_reason')}</p>
 
         {/* Progress */}
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-text-muted whitespace-nowrap">Step {currentStep + 1} of {steps.length}</span>
+          <span className="text-[10px] text-text-muted whitespace-nowrap">{t('hitl.step')} {currentStep + 1} {t('hitl.of')} {steps.length}</span>
           <div className="flex-1 h-1.5 bg-border rounded-full overflow-hidden">
             <div
               className="h-full bg-accent rounded-full transition-all duration-500"

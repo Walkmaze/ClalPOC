@@ -4,6 +4,7 @@ import ExecutionsList from './ExecutionsList'
 import ExecutionDetail from './ExecutionDetail'
 import SettingsPanel from './SettingsPanel'
 import Dashboard from './Dashboard'
+import { useT } from './i18n'
 import { generateMemberData, generateContract, generateRegulations, FUND_TYPES, USE_CASES, getUseCaseLabel } from './dataGenerators'
 import { callClaude } from './claudeApi'
 import { executeValidation, determineOutcome } from './validationEngine'
@@ -250,7 +251,8 @@ function _REMOVED_generateDemoExecutions() {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('executions')
+  const t = useT()
+  const [activeTab, setActiveTab] = useState('dashboard')
   const [selectedExecutionId, setSelectedExecutionId] = useState(null)
 
   const [fundType, setFundType] = useState('investment')
@@ -307,12 +309,16 @@ export default function App() {
     const ucLabel = USE_CASE_LABELS[currentUseCase] || 'request'
     const ucIcon = USE_CASE_ICONS[currentUseCase] || '📋'
 
+    const UC_LABELS_HE = { withdrawal: 'בקשת משיכה', fund_transfer: 'בקשת העברה בין מסלולים', beneficiary_update: 'בקשת עדכון מוטבים', employer_change: 'בקשת החלפת מעסיק', early_redemption: 'בקשת פדיון מוקדם' }
+    const ucLabelHe = UC_LABELS_HE[currentUseCase] || 'בקשה'
+    const memberNameHe = execMemberData.member_name_he || execMemberData.member_name
+
     const messages = [
-      { icon: '⏳', text: `Receiving ${ucLabel} for ${execMemberData.member_name}...` },
-      { icon: '📋', text: `Analyzing member profile and fund data...` },
-      { icon: '📜', text: `Reading ${execContract.clauses.length} customer contract clauses...` },
-      { icon: '⚖️', text: `Checking ${execRegulations.length} regulatory requirements...` },
-      { icon: '🧠', text: `Determining required validation steps for ${ucLabel}...` },
+      { icon: '⏳', text: `Receiving ${ucLabel} for ${execMemberData.member_name}...`, textHe: `מקבל ${ucLabelHe} עבור ${memberNameHe}...` },
+      { icon: '📋', text: `Analyzing member profile and fund data...`, textHe: `מנתח פרופיל חבר ונתוני קופה...` },
+      { icon: '📜', text: `Reading ${execContract.clauses.length} customer contract clauses...`, textHe: `קורא ${execContract.clauses.length} סעיפי חוזה לקוח...` },
+      { icon: '⚖️', text: `Checking ${execRegulations.length} regulatory requirements...`, textHe: `בודק ${execRegulations.length} דרישות רגולטוריות...` },
+      { icon: '🧠', text: `Determining required validation steps for ${ucLabel}...`, textHe: `קובע שלבי בדיקה נדרשים עבור ${ucLabelHe}...` },
     ]
 
     const addApiLog = (logEntry) => {
@@ -365,7 +371,7 @@ export default function App() {
     }
 
     updateExecution(execId, { analysisMessages: [] })
-    addAudit({ action: 'Request intake', category: 'system', source: '—', result: 'SUCCESS', details: `${ucIcon} ${ucLabel} — Process initiated` })
+    addAudit({ action: 'Request intake', actionHe: 'קליטת בקשה', category: 'system', source: '—', result: 'SUCCESS', details: `${ucIcon} ${ucLabel} — Process initiated`, detailsHe: `${ucIcon} ${ucLabelHe} — התהליך החל` })
 
     // Easymaze: Create service on launch
     tryEasymaze('launch')
@@ -380,8 +386,8 @@ export default function App() {
       ))
     }
 
-    addAudit({ action: 'Contract analysis', category: 'ai', source: '—', result: 'SUCCESS', details: `${execContract.clauses.length} contract clauses analyzed` })
-    addAudit({ action: 'Regulation check', category: 'ai', source: '—', result: 'SUCCESS', details: `${execRegulations.length} regulations checked` })
+    addAudit({ action: 'Contract analysis', actionHe: 'ניתוח חוזה', category: 'ai', source: '—', result: 'SUCCESS', details: `${execContract.clauses.length} contract clauses analyzed`, detailsHe: `${execContract.clauses.length} סעיפי חוזה נותחו` })
+    addAudit({ action: 'Regulation check', actionHe: 'בדיקת רגולציה', category: 'ai', source: '—', result: 'SUCCESS', details: `${execRegulations.length} regulations checked`, detailsHe: `${execRegulations.length} תקנות נבדקו` })
 
     let validationArray
     try {
@@ -399,10 +405,10 @@ export default function App() {
     await delay(500)
     setExecutions(prev => prev.map(ex =>
       ex.id === execId
-        ? { ...ex, analysisMessages: [...(ex.analysisMessages || []), { icon: '✅', text: `Flow generated: ${validationArray.length} validation steps identified`, done: true }] }
+        ? { ...ex, analysisMessages: [...(ex.analysisMessages || []), { icon: '✅', text: `Flow generated: ${validationArray.length} validation steps identified`, textHe: `זרימה נוצרה: ${validationArray.length} שלבי בדיקה זוהו`, done: true }] }
         : ex
     ))
-    addAudit({ action: 'Flow generation', category: 'ai', source: '—', result: 'SUCCESS', details: `${validationArray.length} validations generated` })
+    addAudit({ action: 'Flow generation', actionHe: 'יצירת זרימה', category: 'ai', source: '—', result: 'SUCCESS', details: `${validationArray.length} validations generated`, detailsHe: `${validationArray.length} בדיקות נוצרו` })
 
     updateExecution(execId, {
       validations: validationArray,
@@ -429,10 +435,12 @@ export default function App() {
         ))
         addAudit({
           action: validationArray[i].name,
+          actionHe: validationArray[i].nameHe || validationArray[i].name,
           category: 'hitl',
           source: validationArray[i].source || '—',
           result: 'PAUSED',
           details: `Waiting for human review: ${validationArray[i].hitl_reason || 'Manual review required'}`,
+          detailsHe: `ממתין לבדיקה אנושית: ${validationArray[i].hitl_reasonHe || validationArray[i].hitl_reason || 'נדרשת בדיקה ידנית'}`,
         })
         await delay(300)
         continue
@@ -462,10 +470,12 @@ export default function App() {
 
       addAudit({
         action: validationArray[i].name,
+        actionHe: validationArray[i].nameHe || validationArray[i].name,
         category: validationArray[i].category,
         source: validationArray[i].source || '—',
         result: status.toUpperCase(),
         details: result.message,
+        detailsHe: result.messageHe || result.message,
       })
     }
 
@@ -503,7 +513,7 @@ export default function App() {
 
         // Process HITL decision
         if (hitlResult.decision === 'approve') {
-          const result = { passed: true, actual_value: 'Human approved', message: 'Approved by human reviewer' }
+          const result = { passed: true, actual_value: 'Human approved', message: 'Approved by human reviewer', messageHe: 'אושר על ידי בודק אנושי' }
           results[hitlIdx] = result
           setExecutions(prev => prev.map(ex =>
             ex.id === execId
@@ -514,9 +524,9 @@ export default function App() {
                 }
               : ex
           ))
-          addAudit({ action: validationArray[hitlIdx].name, category: 'hitl', source: validationArray[hitlIdx].source || '—', result: 'RESOLVED', details: 'Human approved' })
+          addAudit({ action: validationArray[hitlIdx].name, actionHe: validationArray[hitlIdx].nameHe || validationArray[hitlIdx].name, category: 'hitl', source: validationArray[hitlIdx].source || '—', result: 'RESOLVED', details: 'Human approved', detailsHe: 'אושר על ידי בודק אנושי' })
         } else if (hitlResult.decision === 'reject') {
-          const result = { passed: false, actual_value: 'Human rejected', message: 'Rejected by human reviewer' }
+          const result = { passed: false, actual_value: 'Human rejected', message: 'Rejected by human reviewer', messageHe: 'נדחה על ידי בודק אנושי' }
           results[hitlIdx] = result
           setExecutions(prev => prev.map(ex =>
             ex.id === execId
@@ -527,10 +537,10 @@ export default function App() {
                 }
               : ex
           ))
-          addAudit({ action: validationArray[hitlIdx].name, category: 'hitl', source: validationArray[hitlIdx].source || '—', result: 'REJECTED', details: 'Human rejected' })
+          addAudit({ action: validationArray[hitlIdx].name, actionHe: validationArray[hitlIdx].nameHe || validationArray[hitlIdx].name, category: 'hitl', source: validationArray[hitlIdx].source || '—', result: 'REJECTED', details: 'Human rejected', detailsHe: 'נדחה על ידי בודק אנושי' })
         } else {
           // Escalate
-          const result = { passed: true, actual_value: 'Escalated', message: 'Escalated for further review' }
+          const result = { passed: true, actual_value: 'Escalated', message: 'Escalated for further review', messageHe: 'הועבר לבדיקה נוספת' }
           results[hitlIdx] = result
           setExecutions(prev => prev.map(ex =>
             ex.id === execId
@@ -541,7 +551,7 @@ export default function App() {
                 }
               : ex
           ))
-          addAudit({ action: validationArray[hitlIdx].name, category: 'hitl', source: validationArray[hitlIdx].source || '—', result: 'ESCALATED', details: 'Escalated for further review' })
+          addAudit({ action: validationArray[hitlIdx].name, actionHe: validationArray[hitlIdx].nameHe || validationArray[hitlIdx].name, category: 'hitl', source: validationArray[hitlIdx].source || '—', result: 'ESCALATED', details: 'Escalated for further review', detailsHe: 'הועבר לבדיקה נוספת' })
         }
       }
 
@@ -549,10 +559,10 @@ export default function App() {
       const anyRejected = hitlIndices.some(idx => results[idx] && !results[idx].passed)
       if (anyRejected) {
         updateExecution(execId, {
-          outcome: { type: 'blocked', message: 'Process blocked — rejected by human reviewer' },
+          outcome: { type: 'blocked', message: 'Process blocked — rejected by human reviewer', messageHe: 'התהליך נחסם — נדחה על ידי בודק אנושי' },
           status: 'REJECTED',
         })
-        addAudit({ action: 'Outcome determination', category: 'system', source: '—', result: 'FAIL', details: 'Flow terminated by human rejection' })
+        addAudit({ action: 'Outcome determination', actionHe: 'קביעת תוצאה', category: 'system', source: '—', result: 'FAIL', details: 'Flow terminated by human rejection', detailsHe: 'הזרימה הופסקה עקב דחייה אנושית' })
         await delay(200)
         tryEasymaze('completion')
         return
@@ -584,10 +594,12 @@ export default function App() {
 
     addAudit({
       action: 'Outcome determination',
+      actionHe: 'קביעת תוצאה',
       category: 'system',
       source: '—',
       result: finalOutcome.type === 'approved' ? 'SUCCESS' : finalOutcome.type === 'blocked' ? 'FAIL' : 'WARNING',
       details: finalOutcome.message,
+      detailsHe: finalOutcome.messageHe || finalOutcome.message,
     })
 
     // Easymaze: Update service on completion
@@ -803,6 +815,16 @@ export default function App() {
           </h1>
           <nav className="flex">
             <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`px-4 py-3.5 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'dashboard'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-text-muted hover:text-text-primary'
+              }`}
+            >
+              {t('header.dashboard')}
+            </button>
+            <button
               onClick={() => { setActiveTab('executions'); setSelectedExecutionId(null) }}
               className={`px-4 py-3.5 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'executions'
@@ -810,9 +832,9 @@ export default function App() {
                   : 'border-transparent text-text-muted hover:text-text-primary'
               }`}
             >
-              Executions
+              {t('header.executions')}
               {executions.length > 0 && (
-                <span className="ml-2 text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full">
+                <span className="ms-2 text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full">
                   {executions.length}
                 </span>
               )}
@@ -825,17 +847,7 @@ export default function App() {
                   : 'border-transparent text-text-muted hover:text-text-primary'
               }`}
             >
-              Scenario Builder
-            </button>
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`px-4 py-3.5 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'dashboard'
-                  ? 'border-accent text-accent'
-                  : 'border-transparent text-text-muted hover:text-text-primary'
-              }`}
-            >
-              Dashboard
+              {t('header.builder')}
             </button>
             <button
               onClick={() => setActiveTab('settings')}
@@ -845,21 +857,21 @@ export default function App() {
                   : 'border-transparent text-text-muted hover:text-text-primary'
               }`}
             >
-              ⚙ Settings
+              ⚙ {t('header.settings')}
               {emSettings.enabled && (
-                <span className="ml-1.5 w-1.5 h-1.5 inline-block rounded-full bg-success" />
+                <span className="ms-1.5 w-1.5 h-1.5 inline-block rounded-full bg-success" />
               )}
             </button>
           </nav>
         </div>
-        <p className="text-[10px] text-text-muted">Insurance Back-Office Automation</p>
+        <p className="text-[10px] text-text-muted">{t('header.subtitle')}</p>
       </header>
 
       {/* Flood progress bar */}
       {floodProgress && (
         <div className="bg-bg-card border-b border-border px-6 py-2 shrink-0">
           <div className="flex items-center gap-3">
-            <span className="text-sm text-text-primary">🚀 Launching scenarios... {floodProgress.launched} of {floodProgress.total}</span>
+            <span className="text-sm text-text-primary">🚀 {t('flood.launching')} {floodProgress.launched} {t('flood.of')} {floodProgress.total}</span>
             <div className="flex-1 h-1.5 bg-border rounded-full overflow-hidden">
               <div className="h-full bg-accent rounded-full transition-all duration-300" style={{ width: `${(floodProgress.launched / floodProgress.total) * 100}%` }} />
             </div>
@@ -922,7 +934,7 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-border py-3 text-center shrink-0">
-        <p className="text-[10px] text-text-muted">Flowmaze by Walkmaze — AI-Driven Insurance Back-Office Automation</p>
+        <p className="text-[10px] text-text-muted">{t('footer.text')}</p>
       </footer>
     </div>
   )

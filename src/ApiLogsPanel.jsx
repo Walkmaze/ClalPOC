@@ -1,18 +1,21 @@
 import { useState } from 'react'
+import { useT } from './i18n'
 
 function StatusBadge({ code }) {
+  const t = useT()
   if (!code && code !== 0) return null
   const color = code === 0 ? 'bg-error/20 text-error'
     : code >= 200 && code < 300 ? 'bg-success/20 text-success'
     : code >= 400 && code < 500 ? 'bg-warning/20 text-warning'
     : code >= 500 ? 'bg-error/20 text-error'
     : 'bg-border text-text-muted'
-  const label = code === 0 ? 'Network Error' : `${code}`
+  const label = code === 0 ? t('apiLogs.networkError') : `${code}`
   return <span className={`text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded ${color}`}>{label}</span>
 }
 
 function JsonBlock({ data }) {
-  if (!data) return <span className="text-text-muted text-xs italic">No data</span>
+  const t = useT()
+  if (!data) return <span className="text-text-muted text-xs italic">{t('apiLogs.noData')}</span>
   const text = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
   return (
     <pre className="text-[11px] font-mono text-accent/80 bg-bg-primary rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
@@ -32,12 +35,13 @@ function ExpandableSection({ label, children, defaultOpen = false }) {
         <span className="text-[10px]">{open ? '▾' : '▸'}</span>
         {label}
       </button>
-      {open && <div className="mt-1 ml-3">{children}</div>}
+      {open && <div className="mt-1 ms-3">{children}</div>}
     </div>
   )
 }
 
 function ApiLogEntry({ entry, index }) {
+  const t = useT()
   const isMock = entry.isMock
   return (
     <div className="bg-bg-primary rounded-xl border border-border overflow-hidden">
@@ -75,17 +79,17 @@ function ApiLogEntry({ entry, index }) {
       {/* Expandable sections */}
       <div className="px-4 pb-3 space-y-1">
         {entry.requestHeaders && (
-          <ExpandableSection label="Request Headers">
+          <ExpandableSection label={t('apiLogs.requestHeaders')}>
             <JsonBlock data={entry.requestHeaders} />
           </ExpandableSection>
         )}
         {entry.requestBody && (
-          <ExpandableSection label="Request Body">
+          <ExpandableSection label={t('apiLogs.requestBody')}>
             <JsonBlock data={entry.requestBody} />
           </ExpandableSection>
         )}
         {entry.responseBody !== undefined && entry.responseBody !== null && (
-          <ExpandableSection label="Response Body">
+          <ExpandableSection label={t('apiLogs.responseBody')}>
             <JsonBlock data={entry.responseBody} />
           </ExpandableSection>
         )}
@@ -95,14 +99,16 @@ function ApiLogEntry({ entry, index }) {
 }
 
 export default function ApiLogsPanel({ apiLogs }) {
+  const t = useT()
+
   if (!apiLogs || apiLogs.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <div className="w-12 h-12 rounded-full bg-bg-card border border-border flex items-center justify-center mb-3">
           <span className="text-text-muted text-lg">🔌</span>
         </div>
-        <p className="text-sm text-text-muted">No API calls recorded yet.</p>
-        <p className="text-xs text-text-muted mt-1">API calls will appear here as the flow executes.</p>
+        <p className="text-sm text-text-muted">{t('apiLogs.empty')}</p>
+        <p className="text-xs text-text-muted mt-1">{t('apiLogs.empty.desc')}</p>
       </div>
     )
   }
@@ -115,10 +121,10 @@ export default function ApiLogsPanel({ apiLogs }) {
     <div>
       {/* Summary */}
       <div className="flex items-center gap-4 mb-4 text-xs text-text-muted">
-        <span>{apiLogs.length} total calls</span>
-        {realCount > 0 && <span className="text-accent">{realCount} real</span>}
-        {mockCount > 0 && <span className="text-purple-400">{mockCount} mock</span>}
-        {errorCount > 0 && <span className="text-error">{errorCount} failed</span>}
+        <span>{apiLogs.length} {t('apiLogs.totalCalls')}</span>
+        {realCount > 0 && <span className="text-accent">{realCount} {t('apiLogs.real')}</span>}
+        {mockCount > 0 && <span className="text-purple-400">{mockCount} {t('apiLogs.mock')}</span>}
+        {errorCount > 0 && <span className="text-error">{errorCount} {t('apiLogs.failed')}</span>}
       </div>
 
       {/* Log entries */}
