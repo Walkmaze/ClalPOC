@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useT, useLoc } from './i18n'
+import { useT, useLoc, useI18n } from './i18n'
 
 const USE_CASE_BADGES = {
   withdrawal: { label: 'Withdrawal', labelHe: 'משיכה', color: 'bg-amber-500/20 text-amber-300' },
@@ -256,6 +256,8 @@ const CATEGORY_COLORS = {
 function ContractTab({ contract, setContract }) {
   const t = useT()
   const loc = useLoc()
+  const { lang } = useI18n()
+  const lk = (field) => lang === 'he' ? field + 'He' : field
   if (!contract) return <EmptyState text={t('dataTabs.generateToSeeContract')} />
 
   const updateClause = (index, field, value) => {
@@ -269,6 +271,23 @@ function ContractTab({ contract, setContract }) {
     setContract(prev => ({
       ...prev,
       clauses: prev.clauses.filter((_, i) => i !== index),
+    }))
+  }
+
+  const addClause = () => {
+    const nextNum = contract.clauses.length + 1
+    setContract(prev => ({
+      ...prev,
+      clauses: [...prev.clauses, {
+        clause_id: `CL-NEW-${nextNum}`,
+        category: 'processing',
+        title: t('dataTabs.newClauseTitle'),
+        titleHe: t('dataTabs.newClauseTitle'),
+        description: '',
+        descriptionHe: '',
+        conditions: [],
+        consequence: 'block',
+      }],
     }))
   }
 
@@ -292,22 +311,42 @@ function ContractTab({ contract, setContract }) {
         <div key={i} className="bg-bg-primary rounded-lg border border-border p-4">
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-mono text-accent bg-accent/10 px-2 py-0.5 rounded">{clause.clause_id}</span>
-              {clause.category && (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded ${CATEGORY_COLORS[clause.category] || 'bg-bg-card text-text-muted'}`}>{t(`cat.${clause.category}`, clause.category)}</span>
-              )}
-              <span className={`text-[10px] px-1.5 py-0.5 rounded ${CONSEQUENCE_COLORS[clause.consequence] || 'bg-warning/20 text-warning'}`}>{t(`consequence.${clause.consequence}`, clause.consequence)}</span>
+              <input
+                value={clause.clause_id}
+                onChange={e => updateClause(i, 'clause_id', e.target.value)}
+                className="w-20 text-xs font-mono text-accent bg-accent/10 px-2 py-0.5 rounded border border-transparent focus:border-accent focus:outline-none"
+              />
+              <select
+                value={clause.category || 'processing'}
+                onChange={e => updateClause(i, 'category', e.target.value)}
+                className={`text-[10px] px-1.5 py-0.5 rounded border-0 focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer ${CATEGORY_COLORS[clause.category] || 'bg-bg-card text-text-muted'}`}
+              >
+                {['eligibility', 'financial', 'processing', 'withdrawal', 'sla', 'penalties'].map(cat => (
+                  <option key={cat} value={cat}>{t(`cat.${cat}`, cat)}</option>
+                ))}
+              </select>
+              <select
+                value={clause.consequence || 'block'}
+                onChange={e => updateClause(i, 'consequence', e.target.value)}
+                className={`text-[10px] px-1.5 py-0.5 rounded border-0 focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer ${CONSEQUENCE_COLORS[clause.consequence] || 'bg-warning/20 text-warning'}`}
+              >
+                {['block', 'require_approval', 'require_hitl', 'apply_fee', 'notify'].map(con => (
+                  <option key={con} value={con}>{t(`consequence.${con}`, con)}</option>
+                ))}
+              </select>
             </div>
             <button onClick={() => removeClause(i)} className="text-text-muted hover:text-error text-xs">✕</button>
           </div>
           <input
             value={loc(clause, 'title') || ''}
-            onChange={e => updateClause(i, 'title', e.target.value)}
+            onChange={e => updateClause(i, lk('title'), e.target.value)}
+            placeholder={t('dataTabs.newClauseTitle')}
             className="w-full bg-transparent text-sm font-semibold text-text-primary mb-1 focus:outline-none border-b border-transparent focus:border-accent"
           />
           <textarea
             value={loc(clause, 'description') || ''}
-            onChange={e => updateClause(i, 'description', e.target.value)}
+            onChange={e => updateClause(i, lk('description'), e.target.value)}
+            placeholder={t('dataTabs.newClauseDesc')}
             rows={2}
             className="w-full bg-transparent text-xs text-text-muted mt-1 focus:outline-none resize-none border-b border-transparent focus:border-accent"
           />
@@ -322,6 +361,13 @@ function ContractTab({ contract, setContract }) {
           )}
         </div>
       ))}
+
+      <button
+        onClick={addClause}
+        className="w-full py-2.5 rounded-lg border border-dashed border-accent/40 text-accent text-xs font-medium hover:bg-accent/5 transition-colors flex items-center justify-center gap-1.5"
+      >
+        <span className="text-sm">+</span> {t('dataTabs.addClause')}
+      </button>
     </div>
   )
 }
@@ -329,6 +375,8 @@ function ContractTab({ contract, setContract }) {
 function RegulationsTab({ regulations, setRegulations }) {
   const t = useT()
   const loc = useLoc()
+  const { lang } = useI18n()
+  const lk = (field) => lang === 'he' ? field + 'He' : field
   if (!regulations || regulations.length === 0) return <EmptyState text={t('dataTabs.generateToSeeRegulations')} />
 
   const updateReg = (index, field, value) => {
@@ -336,16 +384,44 @@ function RegulationsTab({ regulations, setRegulations }) {
   }
 
   const updateRequirement = (regIndex, reqIndex, value) => {
+    const reqField = lk('requirements')
     setRegulations(prev => prev.map((r, i) => {
       if (i !== regIndex) return r
-      const newReqs = [...r.requirements]
+      const reqs = r[reqField] || r.requirements
+      const newReqs = [...reqs]
       newReqs[reqIndex] = value
-      return { ...r, requirements: newReqs }
+      return { ...r, [reqField]: newReqs }
     }))
   }
 
   const removeRegulation = (index) => {
     setRegulations(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const addRegulation = () => {
+    const nextNum = regulations.length + 1
+    const today = new Date().toISOString().split('T')[0]
+    setRegulations(prev => [...prev, {
+      regulation_id: `REG-NEW-${nextNum}`,
+      authority: 'Custom',
+      authorityHe: 'מותאם אישית',
+      title: t('dataTabs.newRegTitle'),
+      titleHe: t('dataTabs.newRegTitle'),
+      requirements: [''],
+      requirementsHe: [''],
+      effective_date: today,
+    }])
+  }
+
+  const addRequirement = (regIndex) => {
+    setRegulations(prev => prev.map((r, i) => {
+      if (i !== regIndex) return r
+      return {
+        ...r,
+        requirements: [...r.requirements, ''],
+        ...(r.requirementsHe ? { requirementsHe: [...r.requirementsHe, ''] } : {}),
+      }
+    }))
   }
 
   return (
@@ -354,14 +430,23 @@ function RegulationsTab({ regulations, setRegulations }) {
         <div key={i} className="bg-bg-primary rounded-lg border border-border p-4">
           <div className="flex items-start justify-between mb-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-mono text-accent bg-accent/10 px-2 py-0.5 rounded">{reg.regulation_id}</span>
-              <span className="text-xs text-text-muted">{loc(reg, 'authority')}</span>
+              <input
+                value={reg.regulation_id}
+                onChange={e => updateReg(i, 'regulation_id', e.target.value)}
+                className="w-28 text-xs font-mono text-accent bg-accent/10 px-2 py-0.5 rounded border border-transparent focus:border-accent focus:outline-none"
+              />
+              <input
+                value={loc(reg, 'authority') || ''}
+                onChange={e => updateReg(i, lk('authority'), e.target.value)}
+                className="w-36 text-xs text-text-muted bg-transparent border-b border-transparent focus:border-accent focus:outline-none"
+              />
             </div>
             <button onClick={() => removeRegulation(i)} className="text-text-muted hover:text-error text-xs">✕</button>
           </div>
           <input
             value={loc(reg, 'title') || ''}
-            onChange={e => updateReg(i, 'title', e.target.value)}
+            onChange={e => updateReg(i, lk('title'), e.target.value)}
+            placeholder={t('dataTabs.newRegTitle')}
             className="w-full bg-transparent text-sm font-semibold text-text-primary mb-2 focus:outline-none border-b border-transparent focus:border-accent"
           />
           <div className="space-y-1">
@@ -370,14 +455,36 @@ function RegulationsTab({ regulations, setRegulations }) {
                 key={j}
                 value={req || ''}
                 onChange={e => updateRequirement(i, j, e.target.value)}
+                placeholder={t('dataTabs.newRegRequirement')}
                 rows={2}
                 className="w-full bg-bg-card text-xs text-text-muted rounded px-2 py-1.5 focus:outline-none resize-none focus:border-accent border border-transparent"
               />
             ))}
           </div>
-          <div className="mt-2 text-[10px] text-text-muted">{t('dataTabs.effective')} {reg.effective_date}</div>
+          <button
+            onClick={() => addRequirement(i)}
+            className="mt-1.5 text-[10px] text-accent hover:text-accent/80 transition-colors flex items-center gap-1"
+          >
+            <span>+</span> {t('dataTabs.addRequirement')}
+          </button>
+          <div className="mt-2 flex items-center gap-1.5 text-[10px] text-text-muted">
+            <span>{t('dataTabs.effective')}</span>
+            <input
+              type="date"
+              value={reg.effective_date || ''}
+              onChange={e => updateReg(i, 'effective_date', e.target.value)}
+              className="bg-transparent text-text-muted text-[10px] border-b border-transparent focus:border-accent focus:outline-none"
+            />
+          </div>
         </div>
       ))}
+
+      <button
+        onClick={addRegulation}
+        className="w-full py-2.5 rounded-lg border border-dashed border-accent/40 text-accent text-xs font-medium hover:bg-accent/5 transition-colors flex items-center justify-center gap-1.5"
+      >
+        <span className="text-sm">+</span> {t('dataTabs.addRegulation')}
+      </button>
     </div>
   )
 }

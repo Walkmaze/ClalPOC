@@ -223,6 +223,13 @@ const translations = {
   'dataTabs.clauses': { en: 'clauses', he: 'סעיפים' },
   'dataTabs.generateToSeeContract': { en: 'Generate a scenario to see contract terms', he: 'צור תרחיש כדי לראות תנאי חוזה' },
   'dataTabs.generateToSeeRegulations': { en: 'Generate a scenario to see regulations', he: 'צור תרחיש כדי לראות רגולציות' },
+  'dataTabs.addClause': { en: 'Add Clause', he: 'הוסף סעיף' },
+  'dataTabs.addRegulation': { en: 'Add Regulation', he: 'הוסף תקנה' },
+  'dataTabs.addRequirement': { en: 'Add Requirement', he: 'הוסף דרישה' },
+  'dataTabs.newClauseTitle': { en: 'New Clause', he: 'סעיף חדש' },
+  'dataTabs.newClauseDesc': { en: 'Enter clause description...', he: 'הזן תיאור סעיף...' },
+  'dataTabs.newRegTitle': { en: 'New Regulation', he: 'תקנה חדשה' },
+  'dataTabs.newRegRequirement': { en: 'Enter requirement...', he: 'הזן דרישה...' },
   'dataTabs.currentBeneficiaries': { en: 'Current Beneficiaries', he: 'מוטבים נוכחיים' },
   'dataTabs.newBeneficiaries': { en: 'New Beneficiaries', he: 'מוטבים חדשים' },
 
