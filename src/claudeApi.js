@@ -86,6 +86,10 @@ ${JSON.stringify(regulations, null, 2)}
 
 Return only the JSON array.`
 
+  const model = 'claude-sonnet-4-20250514'
+  const maxTokens = 8000
+  const requestedAt = new Date().toISOString()
+
   const response = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
@@ -95,8 +99,8 @@ Return only the JSON array.`
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000,
+      model,
+      max_tokens: maxTokens,
       system: systemPrompt,
       messages: [{ role: 'user', content: userMessage }],
     }),
@@ -104,11 +108,36 @@ Return only the JSON array.`
 
   if (!response.ok) {
     const err = await response.text()
-    throw new Error(`Claude API error: ${response.status} — ${err}`)
+    const errorObj = new Error(`Claude API error: ${response.status} — ${err}`)
+    errorObj.log = {
+      model,
+      maxTokens,
+      requestedAt,
+      respondedAt: new Date().toISOString(),
+      system: systemPrompt,
+      userMessage,
+      rawResponse: err,
+      error: true,
+      status: response.status,
+    }
+    throw errorObj
   }
 
   const data = await response.json()
+  const respondedAt = new Date().toISOString()
   const text = data.content[0].text
+
+  const log = {
+    model,
+    maxTokens,
+    requestedAt,
+    respondedAt,
+    system: systemPrompt,
+    userMessage,
+    rawResponse: text,
+    usage: data.usage || null,
+    stopReason: data.stop_reason || null,
+  }
 
   // Parse JSON, handling possible markdown fences
   let jsonStr = text.trim()
@@ -116,5 +145,6 @@ Return only the JSON array.`
     jsonStr = jsonStr.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '')
   }
 
-  return JSON.parse(jsonStr)
+  const validations = JSON.parse(jsonStr)
+  return { validations, log }
 }

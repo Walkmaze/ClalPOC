@@ -24,6 +24,17 @@ const translations = {
   'driverU.empty': { en: 'No payload available.', he: 'אין מטען זמין.' },
   'driverU.empty.desc': { en: 'The payload will appear here once the flow completes.', he: 'המטען יופיע כאן לאחר השלמת הזרימה.' },
   'driverU.copy': { en: 'Copy', he: 'העתק' },
+  // ── Claude Log ──
+  'claudeLog.empty': { en: 'No Claude conversation yet.', he: 'אין עדיין שיחה עם Claude.' },
+  'claudeLog.empty.desc': { en: 'The request and response will appear here once the flow runs.', he: 'הבקשה והתגובה יופיעו כאן לאחר הרצת הזרימה.' },
+  'claudeLog.model': { en: 'Model', he: 'מודל' },
+  'claudeLog.requestedAt': { en: 'Requested At', he: 'נשלח בשעה' },
+  'claudeLog.respondedAt': { en: 'Responded At', he: 'התקבל בשעה' },
+  'claudeLog.tokens': { en: 'Tokens (in → out)', he: 'טוקנים (קלט ← פלט)' },
+  'claudeLog.system': { en: 'System Prompt (input)', he: 'הנחיית מערכת (קלט)' },
+  'claudeLog.user': { en: 'User Message (input)', he: 'הודעת משתמש (קלט)' },
+  'claudeLog.response': { en: 'Claude Response (output)', he: 'תגובת Claude (פלט)' },
+  'claudeLog.errorResponse': { en: 'Error Response', he: 'תגובת שגיאה' },
 
   // ── Scenario Builder ──
   'builder.fundType': { en: 'Fund Type', he: 'סוג קופה' },
@@ -96,6 +107,7 @@ const translations = {
   'detail.slaDeadline': { en: 'SLA Deadline', he: 'מועד SLA' },
   'detail.status': { en: 'Status', he: 'סטטוס' },
   'detail.driverUPayload': { en: 'DriverU Payload', he: 'מטען DriverU' },
+  'detail.claudeLog': { en: 'Claude Log', he: 'יומן Claude' },
   'detail.flowExecution': { en: 'Flow Execution', he: 'הרצת זרימה' },
 
   // ── Dashboard ──

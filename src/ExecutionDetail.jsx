@@ -3,6 +3,7 @@ import FlowExecution from './FlowExecution'
 import AuditTrail from './AuditTrail'
 import HitlPanel from './HitlPanel'
 import DriverUPayload from './ApiLogsPanel'
+import ClaudeLogPanel from './ClaudeLogPanel'
 import { useT } from './i18n'
 
 const STATUS_COLORS = {
@@ -138,6 +139,14 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
         >
           📦 {t('detail.driverUPayload')}
         </button>
+        <button
+          onClick={() => setActiveDetailTab('claudeLog')}
+          className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 ${
+            activeDetailTab === 'claudeLog' ? 'bg-accent text-bg-primary' : 'bg-bg-card text-text-muted hover:text-text-primary border border-border'
+          }`}
+        >
+          💬 {t('detail.claudeLog')}
+        </button>
       </div>
 
       {/* Flow + HITL Panel layout */}
@@ -188,6 +197,16 @@ export default function ExecutionDetail({ execution, onApprove, onReject, onBack
             {t('detail.driverUPayload')} — {execution.processId}
           </h3>
           <DriverUPayload execution={execution} />
+        </div>
+      )}
+
+      {/* Claude Log tab */}
+      {activeDetailTab === 'claudeLog' && (
+        <div className="bg-bg-card rounded-xl border border-border p-5">
+          <h3 className="text-sm font-semibold text-accent uppercase tracking-wider mb-4">
+            {t('detail.claudeLog')} — {execution.processId}
+          </h3>
+          <ClaudeLogPanel execution={execution} />
         </div>
       )}
     </div>

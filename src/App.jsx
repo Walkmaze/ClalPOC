@@ -324,9 +324,13 @@ export default function App() {
 
     let validationArray
     try {
-      validationArray = await callClaude(execMemberData, execContract, execRegulations, apiKey)
+      const { validations, log } = await callClaude(execMemberData, execContract, execRegulations, apiKey)
+      validationArray = validations
+      updateExecution(execId, { claudeLog: log })
     } catch (err) {
-      updateExecution(execId, { error: `API Error: ${err.message}`, status: 'ERROR' })
+      const patch = { error: `API Error: ${err.message}`, status: 'ERROR' }
+      if (err.log) patch.claudeLog = err.log
+      updateExecution(execId, patch)
       return
     }
 
