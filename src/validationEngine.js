@@ -39,7 +39,7 @@ export function executeValidation(validation, memberData) {
   }
 
   // Age-based checks
-  if (field === 'birth_date' || field === 'age' || ruleLower.includes('age')) {
+  if (field === 'birth_date' || field === 'age' || /\bage\b/.test(ruleLower)) {
     const age = getAge(memberData.birth_date)
     const threshold = extractNumber(expected) || extractNumber(rule)
     if (threshold !== null) {
@@ -445,7 +445,7 @@ export function determineOutcome(validations, results, memberData) {
   )
   const hasAgeFailure = blockingFailures.some(({ validation }) =>
     validation.field === 'age' || validation.field === 'birth_date' ||
-    (validation.rule || '').toLowerCase().includes('age')
+    /\bage\b/.test((validation.rule || '').toLowerCase())
   )
   const hasLiquidityFailure = blockingFailures.some(({ validation }) =>
     (validation.rule || '').toLowerCase().includes('liquidity') || validation.field === 'liquidity_date'
