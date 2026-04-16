@@ -210,6 +210,7 @@ const translations = {
   'dataTabs.clauses': { en: 'clauses', he: 'סעיפים' },
   'dataTabs.generateToSeeContract': { en: 'Generate a scenario to see contract terms', he: 'צור תרחיש כדי לראות תנאי פוליסה' },
   'dataTabs.generateToSeeRegulations': { en: 'Generate a scenario to see regulations', he: 'צור תרחיש כדי לראות רגולציות' },
+  'dataTabs.addCondition': { en: 'Condition', he: 'תנאי' },
   'dataTabs.addClause': { en: 'Add Clause', he: 'הוסף סעיף' },
   'dataTabs.addRegulation': { en: 'Add Regulation', he: 'הוסף תקנה' },
   'dataTabs.addRequirement': { en: 'Add Requirement', he: 'הוסף דרישה' },

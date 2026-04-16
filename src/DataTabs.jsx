@@ -253,6 +253,14 @@ const CATEGORY_COLORS = {
   penalties: 'bg-red-500/20 text-red-300',
 }
 
+function parseConditionValue(currentValue, newRaw) {
+  if (typeof currentValue === 'boolean') return newRaw === 'true'
+  if (typeof currentValue === 'number') return newRaw === '' ? 0 : Number(newRaw)
+  return newRaw
+}
+
+const OPERATORS = ['==', '!=', '>=', '<=', '>', '<']
+
 function ContractTab({ contract, setContract }) {
   const t = useT()
   const loc = useLoc()
@@ -264,6 +272,39 @@ function ContractTab({ contract, setContract }) {
     setContract(prev => ({
       ...prev,
       clauses: prev.clauses.map((c, i) => i === index ? { ...c, [field]: value } : c),
+    }))
+  }
+
+  const updateCondition = (clauseIndex, condIndex, key, value) => {
+    setContract(prev => ({
+      ...prev,
+      clauses: prev.clauses.map((c, i) => {
+        if (i !== clauseIndex) return c
+        const newConditions = c.conditions.map((cond, j) =>
+          j === condIndex ? { ...cond, [key]: key === 'value' ? parseConditionValue(cond.value, value) : value } : cond
+        )
+        return { ...c, conditions: newConditions }
+      }),
+    }))
+  }
+
+  const removeCondition = (clauseIndex, condIndex) => {
+    setContract(prev => ({
+      ...prev,
+      clauses: prev.clauses.map((c, i) => {
+        if (i !== clauseIndex) return c
+        return { ...c, conditions: c.conditions.filter((_, j) => j !== condIndex) }
+      }),
+    }))
+  }
+
+  const addCondition = (clauseIndex) => {
+    setContract(prev => ({
+      ...prev,
+      clauses: prev.clauses.map((c, i) => {
+        if (i !== clauseIndex) return c
+        return { ...c, conditions: [...(c.conditions || []), { field: '', operator: '==', value: '' }] }
+      }),
     }))
   }
 
@@ -351,14 +392,39 @@ function ContractTab({ contract, setContract }) {
             className="w-full bg-transparent text-xs text-text-muted mt-1 focus:outline-none resize-none border-b border-transparent focus:border-accent"
           />
           {clause.conditions && clause.conditions.length > 0 && (
-            <div className="mt-2 text-[10px] text-text-muted font-mono">
+            <div className="mt-2 space-y-1">
               {clause.conditions.map((c, j) => (
-                <span key={j} className="inline-block bg-bg-card rounded px-1.5 py-0.5 me-1 mb-1">
-                  {c.field} {c.operator} {JSON.stringify(c.value)}
-                </span>
+                <div key={j} className="flex items-center gap-1 text-[10px] font-mono">
+                  <input
+                    value={c.field}
+                    onChange={e => updateCondition(i, j, 'field', e.target.value)}
+                    className="w-36 bg-bg-card text-text-muted rounded px-1.5 py-0.5 border border-transparent focus:border-accent focus:outline-none"
+                    placeholder="field"
+                  />
+                  <select
+                    value={c.operator}
+                    onChange={e => updateCondition(i, j, 'operator', e.target.value)}
+                    className="bg-bg-card text-accent rounded px-1 py-0.5 border border-transparent focus:border-accent focus:outline-none cursor-pointer"
+                  >
+                    {OPERATORS.map(op => <option key={op} value={op}>{op}</option>)}
+                  </select>
+                  <input
+                    value={typeof c.value === 'boolean' ? String(c.value) : c.value}
+                    onChange={e => updateCondition(i, j, 'value', e.target.value)}
+                    className="w-24 bg-bg-card text-text-muted rounded px-1.5 py-0.5 border border-transparent focus:border-accent focus:outline-none"
+                    placeholder="value"
+                  />
+                  <button onClick={() => removeCondition(i, j)} className="text-text-muted hover:text-error px-1">✕</button>
+                </div>
               ))}
             </div>
           )}
+          <button
+            onClick={() => addCondition(i)}
+            className="mt-1.5 text-[10px] text-accent hover:text-accent/80 transition-colors flex items-center gap-1"
+          >
+            <span>+</span> {t('dataTabs.addCondition')}
+          </button>
         </div>
       ))}
 
