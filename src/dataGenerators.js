@@ -514,7 +514,7 @@ const COMPENSATION_WITHDRAWAL_CLAUSES = [
     title: 'Early Withdrawal Eligibility',
     titleHe: 'זכאות למשיכה מוקדמת',
     description: 'Early withdrawal (pre-retirement) allowed only if contract permits. If yes, subject to tax clause.',
-    descriptionHe: 'משיכה מוקדמת (לפני פרישה) מותרת רק אם החוזה מתיר. במקרה זה, כפופה לסעיף המס.',
+    descriptionHe: 'משיכה מוקדמת (לפני פרישה) מותרת רק אם הפוליסה מתירה. במקרה זה, כפופה לסעיף המס.',
     conditions: [{ field: 'early_withdrawal_allowed', operator: '==', value: true }],
     consequence: 'block',
   }),

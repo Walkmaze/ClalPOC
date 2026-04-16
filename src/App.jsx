@@ -301,7 +301,7 @@ export default function App() {
     const messages = [
       { icon: '⏳', text: `Receiving ${ucLabel} for ${execMemberData.member_name}...`, textHe: `מקבל ${ucLabelHe} עבור ${memberNameHe}...` },
       { icon: '📋', text: `Analyzing member profile and fund data...`, textHe: `מנתח פרופיל חבר ונתוני קופה...` },
-      { icon: '📜', text: `Reading ${execContract.clauses.length} customer contract clauses...`, textHe: `קורא ${execContract.clauses.length} סעיפי חוזה לקוח...` },
+      { icon: '📜', text: `Reading ${execContract.clauses.length} customer contract clauses...`, textHe: `קורא ${execContract.clauses.length} סעיפי פוליסה לקוח...` },
       { icon: '⚖️', text: `Checking ${execRegulations.length} regulatory requirements...`, textHe: `בודק ${execRegulations.length} דרישות רגולטוריות...` },
       { icon: '🧠', text: `Determining required validation steps for ${ucLabel}...`, textHe: `קובע שלבי בדיקה נדרשים עבור ${ucLabelHe}...` },
     ]
@@ -319,7 +319,7 @@ export default function App() {
       ))
     }
 
-    addAudit({ action: 'Contract analysis', actionHe: 'ניתוח חוזה', category: 'ai', source: '—', result: 'SUCCESS', details: `${execContract.clauses.length} contract clauses analyzed`, detailsHe: `${execContract.clauses.length} סעיפי חוזה נותחו` })
+    addAudit({ action: 'Contract analysis', actionHe: 'ניתוח פוליסה', category: 'ai', source: '—', result: 'SUCCESS', details: `${execContract.clauses.length} contract clauses analyzed`, detailsHe: `${execContract.clauses.length} סעיפי פוליסה נותחו` })
     addAudit({ action: 'Regulation check', actionHe: 'בדיקת רגולציה', category: 'ai', source: '—', result: 'SUCCESS', details: `${execRegulations.length} regulations checked`, detailsHe: `${execRegulations.length} תקנות נבדקו` })
 
     let validationArray
