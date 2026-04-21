@@ -19,10 +19,10 @@ const translations = {
   'settings.language.he': { en: 'עברית', he: 'עברית' },
   'settings.language.desc': { en: 'Interface language and text direction', he: 'שפת ממשק וכיוון טקסט' },
   // ── DriverU ──
-  'driverU.payload': { en: 'DriverU Payload', he: 'מטען DriverU' },
-  'driverU.desc': { en: 'JSON payload to be sent to DriverU when integration is active.', he: 'מטען JSON שיישלח ל-DriverU כשהאינטגרציה פעילה.' },
-  'driverU.empty': { en: 'No payload available.', he: 'אין מטען זמין.' },
-  'driverU.empty.desc': { en: 'The payload will appear here once the flow completes.', he: 'המטען יופיע כאן לאחר השלמת הזרימה.' },
+  'driverU.payload': { en: 'DriverU Payload', he: 'Payload DriverU' },
+  'driverU.desc': { en: 'JSON payload to be sent to DriverU when integration is active.', he: 'payload JSON שיישלח ל-DriverU כשהאינטגרציה פעילה.' },
+  'driverU.empty': { en: 'No payload available.', he: 'אין payload זמין.' },
+  'driverU.empty.desc': { en: 'The payload will appear here once the flow completes.', he: 'ה-payload יופיע כאן לאחר השלמת הזרימה.' },
   'driverU.copy': { en: 'Copy', he: 'העתק' },
   // ── Claude Log ──
   'claudeLog.empty': { en: 'No Claude conversation yet.', he: 'אין עדיין שיחה עם Claude.' },
@@ -106,7 +106,7 @@ const translations = {
   'detail.priority': { en: 'Priority', he: 'עדיפות' },
   'detail.slaDeadline': { en: 'SLA Deadline', he: 'מועד SLA' },
   'detail.status': { en: 'Status', he: 'סטטוס' },
-  'detail.driverUPayload': { en: 'DriverU Payload', he: 'מטען DriverU' },
+  'detail.driverUPayload': { en: 'DriverU Payload', he: 'Payload DriverU' },
   'detail.claudeLog': { en: 'Claude Log', he: 'יומן Claude' },
   'detail.flowExecution': { en: 'Flow Execution', he: 'הרצת זרימה' },
 
