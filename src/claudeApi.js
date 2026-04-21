@@ -1,3 +1,58 @@
+const SENSITIVE_MEMBER_FIELDS = new Set([
+  'member_id',
+  'member_name',
+  'member_name_he',
+  'birth_date',
+  'phone',
+  'email',
+  'account_number',
+  'account_owner',
+  'id_photo_confidence',
+  'employer',
+  'current_employer',
+  'new_employer',
+  'employment_end_date',
+  'new_employment_start_date',
+])
+
+const SENSITIVE_BENEFICIARY_FIELDS = new Set(['name', 'name_he', 'id_number'])
+
+const SENSITIVE_CONTRACT_FIELDS = new Set(['customer_name', 'customer_name_he'])
+
+const BENEFICIARY_KEYS = new Set(['current_beneficiaries', 'new_beneficiaries'])
+
+const REDACTED = '[REDACTED]'
+
+function redactMemberData(memberData) {
+  const result = {}
+  for (const [key, value] of Object.entries(memberData)) {
+    if (SENSITIVE_MEMBER_FIELDS.has(key)) {
+      result[key] = REDACTED
+    } else if (BENEFICIARY_KEYS.has(key) && Array.isArray(value)) {
+      result[key] = value.map(redactBeneficiary)
+    } else {
+      result[key] = value
+    }
+  }
+  return result
+}
+
+function redactBeneficiary(beneficiary) {
+  const result = {}
+  for (const [key, value] of Object.entries(beneficiary)) {
+    result[key] = SENSITIVE_BENEFICIARY_FIELDS.has(key) ? REDACTED : value
+  }
+  return result
+}
+
+function redactContract(contract) {
+  const result = {}
+  for (const [key, value] of Object.entries(contract)) {
+    result[key] = SENSITIVE_CONTRACT_FIELDS.has(key) ? REDACTED : value
+  }
+  return result
+}
+
 export async function callClaude(memberData, contract, regulations, apiKey) {
   const useCase = memberData.use_case || 'withdrawal'
   const useCaseLabels = {
@@ -71,15 +126,20 @@ Standard checks to always include for withdrawal requests:
 
 Order them logically: identity checks first (ID photo, bank account), then eligibility (age), then financial (balance, amounts), then contract-specific, then regulatory. Place HITL validations after the automated checks they relate to.
 Generate between 5 and 12 validations depending on the complexity of the scenario.
-Make sure validation rules reference the actual field names present in the member data.`
+Make sure validation rules reference the actual field names present in the member data.
+
+PRIVACY NOTE: Personally identifiable values in the member data and contract (such as names, IDs, dates of birth, phones, emails, bank account numbers, employer names, and the ID photo confidence score) are replaced with "[REDACTED]". The field keys are still present. Generate validation rules that reference these field names as usual — the actual values will be evaluated locally, not by you.`
+
+  const redactedMemberData = redactMemberData(memberData)
+  const redactedContract = redactContract(contract)
 
   const userMessage = `Generate validation checks for this ${useCaseLabel} request:
 
 MEMBER DATA:
-${JSON.stringify(memberData, null, 2)}
+${JSON.stringify(redactedMemberData, null, 2)}
 
 CUSTOMER CONTRACT (specific terms for this member):
-${JSON.stringify(contract, null, 2)}
+${JSON.stringify(redactedContract, null, 2)}
 
 GOVERNMENT REGULATIONS (apply to all members):
 ${JSON.stringify(regulations, null, 2)}
