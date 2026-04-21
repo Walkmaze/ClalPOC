@@ -152,7 +152,7 @@ const translations = {
   'dataTabs.accountNumber': { en: 'Account Number', he: 'מספר חשבון' },
   'dataTabs.accountOwner': { en: 'Account Owner', he: 'בעל חשבון' },
   'dataTabs.idPhotoConfidence': { en: 'ID Photo Confidence (%)', he: 'רמת ודאות תמונת ת.ז. (%)' },
-  'dataTabs.fundData': { en: 'Fund Data', he: 'נתוני קופה' },
+  'dataTabs.fundData': { en: 'Fund Data', he: 'נתוני ביטוח' },
   'dataTabs.withdrawalData': { en: 'Withdrawal Data', he: 'נתוני משיכה' },
   'dataTabs.fundTransferData': { en: 'Fund Transfer Data', he: 'נתוני העברה בין מסלולים' },
   'dataTabs.beneficiaryData': { en: 'Beneficiary Update Data', he: 'נתוני עדכון מוטבים' },

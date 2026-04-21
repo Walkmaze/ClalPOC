@@ -300,10 +300,10 @@ export default function App() {
 
     const messages = [
       { icon: '⏳', text: `Receiving ${ucLabel} for ${execMemberData.member_name}...`, textHe: `מקבל ${ucLabelHe} עבור ${memberNameHe}...` },
-      { icon: '📋', text: `Analyzing member profile and fund data...`, textHe: `מנתח פרופיל חבר ונתוני קופה...` },
+      { icon: '📋', text: `Analyzing member profile and fund data...`, textHe: `מנתח פרופיל חבר ונתוני ביטוח...` },
       { icon: '📜', text: `Reading ${execContract.clauses.length} customer contract clauses...`, textHe: `קורא ${execContract.clauses.length} סעיפי פוליסה לקוח...` },
       { icon: '⚖️', text: `Checking ${execRegulations.length} regulatory requirements...`, textHe: `בודק ${execRegulations.length} דרישות רגולטוריות...` },
-      { icon: '🧠', text: `Determining required validation steps for ${ucLabel}...`, textHe: `קובע שלבי בדיקה נדרשים עבור ${ucLabelHe}...` },
+      { icon: '🧠', text: `Determining required validation steps for ${ucLabel}...`, textHe: `מתכנן שלבי בדיקה נדרשים עבור ${ucLabelHe}...` },
     ]
 
     updateExecution(execId, { analysisMessages: [] })
