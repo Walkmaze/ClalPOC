@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useT } from './i18n'
+import { useT } from '../../i18n'
 
 const STATUS_CONFIG = {
   RUNNING:            { tKey: 'status.RUNNING',           color: 'bg-blue-500/20 text-blue-400',   dot: 'bg-blue-400', pulse: true },

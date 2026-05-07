@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useT, useLoc } from './i18n'
+import { useT, useLoc } from '../../i18n'
 
 const FIELD_RENDERERS = {
   text: ({ field, value, onChange }) => (

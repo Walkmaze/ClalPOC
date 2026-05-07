@@ -10,7 +10,7 @@ import 'reactflow/dist/style.css'
 import './flowDiagram.css'
 
 import { StartEndNode, CustomNode, WebserviceNode, SplitterNode, NodeDetailPanel } from './FlowNodes'
-import { buildFlowDiagram } from './flowDiagramBuilder'
+import { buildFlowDiagram } from '../../../lib/flowDiagramBuilder'
 
 const nodeTypes = {
   startEnd: StartEndNode,

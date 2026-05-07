@@ -4,7 +4,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   AreaChart, Area, LabelList,
 } from 'recharts'
-import { useT } from './i18n'
+import { useT } from '../../i18n'
 
 const COLORS = {
   success: '#4ADE80',

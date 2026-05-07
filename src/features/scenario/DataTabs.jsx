@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useT, useLoc, useI18n } from './i18n'
+import { useT, useLoc, useI18n } from '../../i18n'
 
 const USE_CASE_BADGES = {
   withdrawal: { label: 'Withdrawal', labelHe: 'משיכה', color: 'bg-amber-500/20 text-amber-300' },
@@ -602,7 +602,7 @@ export default function DataTabs({ memberData, setMemberData, contract, setContr
       </div>
 
       {/* Tab content */}
-      <div className="p-4 max-h-[calc(100vh-14rem)] overflow-y-auto">
+      <div className="p-4 min-h-[calc(100vh-17rem)] max-h-[calc(100vh-17rem)] overflow-y-auto">
         {activeTab === 'input' && <InputDataTab memberData={memberData} setMemberData={setMemberData} />}
         {activeTab === 'policies' && <ContractTab contract={contract} setContract={setContract} />}
         {activeTab === 'regulations' && <RegulationsTab regulations={regulations} setRegulations={setRegulations} />}

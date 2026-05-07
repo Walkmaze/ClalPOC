@@ -1,4 +1,4 @@
-import { useT, useLoc } from './i18n'
+import { useT, useLoc } from '../../i18n'
 
 function buildDriverUPayload(execution) {
   if (!execution) return null

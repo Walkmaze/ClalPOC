@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { FUND_TYPES, USE_CASES } from './dataGenerators'
+import { FUND_TYPES, USE_CASES } from '../../lib/dataGenerators'
 import DataTabs from './DataTabs'
-import { useT } from './i18n'
+import { useT } from '../../i18n'
 
 const FLOOD_PRESETS = [5, 10, 20, 50]
 
@@ -70,24 +70,6 @@ export default function ScenarioBuilder({
           >
             {t('builder.generate')}
           </button>
-        </div>
-
-        {/* API Key */}
-        <div className="bg-bg-card rounded-xl border border-border p-4">
-          <label className="block text-xs text-text-muted uppercase tracking-wider mb-2">{t('builder.apiKey')}</label>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={e => setApiKey(e.target.value)}
-            placeholder="sk-ant-..."
-            className="w-full bg-bg-primary border border-border rounded-lg px-3 py-2 text-sm text-text-primary focus:border-accent focus:outline-none placeholder-text-muted/50"
-          />
-          {apiKey && (
-            <div className="flex items-center gap-1.5 mt-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-success" />
-              <span className="text-[10px] text-success">{t('builder.apiKey.configured')}</span>
-            </div>
-          )}
         </div>
 
         {/* Launch button */}

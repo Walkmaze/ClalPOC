@@ -1,14 +1,15 @@
-import { useState, useCallback, useRef } from 'react'
-import ScenarioBuilder from './ScenarioBuilder'
-import ExecutionsList from './ExecutionsList'
-import ExecutionDetail from './ExecutionDetail'
-import SettingsPanel from './SettingsPanel'
-import Dashboard from './Dashboard'
+import { useState, useCallback, useRef, useEffect } from 'react'
+import ScenarioBuilder from './features/scenario/ScenarioBuilder'
+import ExecutionsList from './features/executions/ExecutionsList'
+import ExecutionDetail from './features/executions/ExecutionDetail'
+import SettingsPanel from './features/settings/SettingsPanel'
+import Dashboard from './features/dashboard/Dashboard'
+import RegulationsManagement from './features/regulations/RegulationsManagement'
 import { useT } from './i18n'
-import { generateMemberData, generateContract, generateRegulations, FUND_TYPES, USE_CASES, getUseCaseLabel } from './dataGenerators'
-import { callClaude } from './claudeApi'
-import { executeValidation, determineOutcome } from './validationEngine'
-import { generateBulkScenarios } from './bulkGenerator'
+import { generateMemberData, generateContract, generateRegulations, FUND_TYPES, USE_CASES, getUseCaseLabel } from './lib/dataGenerators'
+import { callClaude } from './lib/claudeApi'
+import { executeValidation, determineOutcome } from './lib/validationEngine'
+import { generateBulkScenarios } from './lib/bulkGenerator'
 
 function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min }
 
@@ -61,189 +62,6 @@ function determinePriority(memberData) {
   return 'Low'
 }
 
-function _REMOVED_generateDemoExecutions() {
-  const demoData = [
-    {
-      processId: 'PROC-78221', memberName: 'Amit Cohen', fundType: 'investment',
-      fundTypeLabel: 'קופת גמל להשקעה — Investment Provident Fund',
-      useCase: 'withdrawal', useCaseLabel: '💰 משיכה — Withdrawal',
-      priority: 'High', status: 'COMPLETED', minutesAgo: 47,
-      memberData: { member_id: '23847561', member_name: 'Amit Cohen', fund_type: 'investment', use_case: 'withdrawal', balance: 342000, withdrawal_amount: 185000, phone: '054-7823456', email: 'amit.cohen@gmail.com', birth_date: '1978-03-14', account_number: '482917365012', account_owner: 'Amit Cohen', id_photo_confidence: 96 },
-      outcome: { type: 'approved', message: 'Withdrawal approved — all validations passed. ₪185,000 transferred.' },
-      validations: [
-        { id: 'v1', name: 'ID Photo Verification', category: 'identity', severity: 'blocking', source: 'REG-2024-07', rule: 'id_photo_confidence >= 90', description: 'Verify member identity photo' },
-        { id: 'v2', name: 'Bank Account Ownership', category: 'identity', severity: 'blocking', source: 'CL-1.1', rule: 'account_owner == member_name', description: 'Verify bank account matches member' },
-        { id: 'v3', name: 'Age Verification', category: 'eligibility', severity: 'blocking', source: 'REG-2024-07', rule: 'age >= 18', description: 'Member must be at least 18' },
-        { id: 'v4', name: 'Balance Check', category: 'financial', severity: 'blocking', source: 'CL-3.8', rule: 'balance > withdrawal_amount', description: 'Sufficient funds available' },
-        { id: 'v5', name: 'Holding Period', category: 'contract', severity: 'blocking', source: 'CL-4.3', rule: 'holding_months >= 12', description: 'Minimum holding period met' },
-      ],
-      validationStatuses: ['pass', 'pass', 'pass', 'pass', 'pass'],
-      validationResults: [
-        { passed: true, actual_value: '96%', message: 'Identity verified (96% confidence)' },
-        { passed: true, actual_value: 'Amit Cohen', message: 'Bank account owner matches member' },
-        { passed: true, actual_value: '48', message: 'Age 48 meets minimum requirement' },
-        { passed: true, actual_value: '₪342,000', message: 'Balance sufficient for ₪185,000 withdrawal' },
-        { passed: true, actual_value: '36 months', message: 'Holding period of 36 months meets 12 month minimum' },
-      ],
-    },
-    {
-      processId: 'PROC-88431', memberName: 'Yael Levi', fundType: 'compensation',
-      fundTypeLabel: 'קופת גמל פיצויים — Compensation Fund',
-      useCase: 'withdrawal', useCaseLabel: '💰 משיכה — Withdrawal',
-      priority: 'Medium', status: 'PENDING_APPROVAL', minutesAgo: 82,
-      memberData: { member_id: '91234567', member_name: 'Yael Levi', fund_type: 'compensation', use_case: 'withdrawal', gender: 'female', balance: 198000, withdrawal_amount: 198000, phone: '052-3456789', email: 'yael.levi@gmail.com', birth_date: '1985-11-22', account_number: '193847562301', account_owner: 'Yael Levi', id_photo_confidence: 93, employer: 'Harel', early_withdrawal_allowed: true },
-      outcome: null,
-      validations: [
-        { id: 'v1', name: 'ID Photo Verification', category: 'identity', severity: 'blocking', source: 'ISA-DID-2024', rule: 'id_photo_confidence >= 90', description: 'Verify identity' },
-        { id: 'v2', name: 'Age Check', category: 'eligibility', severity: 'warning', source: 'CL-4.3', rule: 'age >= 62 for female', description: 'Retirement age check' },
-        { id: 'v3', name: 'Balance Check', category: 'financial', severity: 'blocking', source: 'CL-3.8', rule: 'balance > 0', description: 'Positive balance' },
-        { id: 'v4', name: 'Compliance Review', category: 'contract', severity: 'warning', source: 'CL-HITL-1', requires_hitl: true, hitl_reason: 'Withdrawal amount ₪198,000 exceeds manual review threshold per contract clause CL-HITL-1', description: 'Manual compliance review required', hitl_steps: [
-          { step_id: 'h1', title: 'Verify member identity', description: 'Confirm member identity matches records', fields: [
-            { name: 'id_verified', type: 'select', label: 'Identity verified?', options: ['Verified', 'Mismatch', 'Unable to verify'] },
-            { name: 'verification_notes', type: 'textarea', label: 'Verification notes' },
-          ]},
-          { step_id: 'h2', title: 'Review transaction legitimacy', description: 'Check for fraud indicators', fields: [
-            { name: 'fraud_check', type: 'select', label: 'Fraud indicators?', options: ['None detected', 'Suspicious patterns', 'Confirmed fraud'] },
-            { name: 'risk_level', type: 'select', label: 'Risk assessment', options: ['Low', 'Medium', 'High'] },
-            { name: 'review_notes', type: 'textarea', label: 'Review notes' },
-          ]},
-          { step_id: 'h3', title: 'Final decision', description: 'Approve or reject the transaction', fields: [
-            { name: 'decision', type: 'select', label: 'Decision', options: ['Approve', 'Reject', 'Escalate further'] },
-            { name: 'reason', type: 'textarea', label: 'Decision justification' },
-          ]},
-        ]},
-      ],
-      validationStatuses: ['pass', 'warning', 'pass', 'hitl_waiting'],
-      validationResults: [
-        { passed: true, actual_value: '93%', message: 'Identity verified' },
-        { passed: false, actual_value: '41', message: 'Age 41 below retirement age 62 — early withdrawal path' },
-        { passed: true, actual_value: '₪198,000', message: 'Balance available' },
-        null,
-      ],
-    },
-    {
-      processId: 'PROC-90122', memberName: 'Noam Shapira', fundType: 'study',
-      fundTypeLabel: 'קרן השתלמות — Study Fund',
-      useCase: 'withdrawal', useCaseLabel: '💰 משיכה — Withdrawal',
-      priority: 'Low', status: 'BLOCKED', minutesAgo: 195,
-      memberData: { member_id: '45678901', member_name: 'Noam Shapira', fund_type: 'study', use_case: 'withdrawal', total_balance: 87000, general_track_balance: 52000, stock_track_balance: 35000, withdrawal_amount: 45000, phone: '050-9876543', email: 'noam.shapira@gmail.com', birth_date: '1992-06-08', account_number: '567812349087', account_owner: 'Noam Shapira', id_photo_confidence: 42, liquidity_date: '2027-01-15' },
-      outcome: { type: 'blocked', message: 'Withdrawal blocked — ID photo verification failed (42% confidence, minimum 90% required).' },
-      validations: [
-        { id: 'v1', name: 'ID Photo Verification', category: 'identity', severity: 'blocking', source: 'ISA-DID-2024', rule: 'id_photo_confidence >= 90', description: 'Verify identity' },
-        { id: 'v2', name: 'Liquidity Date Check', category: 'eligibility', severity: 'blocking', source: 'CL-4.3', rule: 'liquidity_date <= today', description: 'Funds accessible after liquidity date' },
-        { id: 'v3', name: 'Balance Check', category: 'financial', severity: 'blocking', source: 'CL-3.1', rule: 'withdrawal_amount >= 5000', description: 'Minimum withdrawal amount' },
-      ],
-      validationStatuses: ['fail', 'fail', 'pass'],
-      validationResults: [
-        { passed: false, actual_value: '42%', message: 'ID photo confidence 42% below 90% threshold' },
-        { passed: false, actual_value: '2027-01-15', message: 'Liquidity date not yet reached' },
-        { passed: true, actual_value: '₪45,000', message: 'Meets minimum withdrawal of ₪5,000' },
-      ],
-    },
-    {
-      processId: 'PROC-91001', memberName: 'Dana Mizrahi', fundType: 'investment',
-      fundTypeLabel: 'קופת גמל להשקעה — Investment Provident Fund',
-      useCase: 'fund_transfer', useCaseLabel: '🔄 העברה בין מסלולים — Fund Transfer',
-      priority: 'Low', status: 'COMPLETED', minutesAgo: 12,
-      memberData: { member_id: '78901234', member_name: 'Dana Mizrahi', fund_type: 'investment', use_case: 'fund_transfer', balance: 267000, transfer_amount: 53000, source_track: 'Conservative', target_track: 'Aggressive Growth', phone: '054-1234567', email: 'dana.mizrahi@gmail.com', birth_date: '1990-01-30', account_number: '890123456789', account_owner: 'Dana Mizrahi', id_photo_confidence: 98 },
-      outcome: { type: 'approved', message: 'Fund transfer approved — ₪53,000 moved from Conservative to Aggressive Growth.' },
-      validations: [
-        { id: 'v1', name: 'Identity Verification', category: 'identity', severity: 'blocking', source: 'ISA-DID-2024', rule: 'id_photo_confidence >= 85', description: 'Verify identity for transfer' },
-        { id: 'v2', name: 'Transfer Limit Check', category: 'financial', severity: 'blocking', source: 'CL-12.3', rule: 'transfer_percentage <= 50', description: 'Max transfer percentage' },
-        { id: 'v3', name: 'Track Switch Cooldown', category: 'eligibility', severity: 'blocking', source: 'CL-12.1', rule: 'days_since_last_transfer >= 30', description: 'Minimum days between transfers' },
-      ],
-      validationStatuses: ['pass', 'pass', 'pass'],
-      validationResults: [
-        { passed: true, actual_value: '98%', message: 'Identity verified' },
-        { passed: true, actual_value: '20%', message: 'Transfer is 20% of balance, within 50% limit' },
-        { passed: true, actual_value: '120 days', message: 'Last transfer 120 days ago, meets 30 day minimum' },
-      ],
-    },
-    {
-      processId: 'PROC-67834', memberName: 'Tamar Avraham', fundType: 'compensation',
-      fundTypeLabel: 'קופת גמל פיצויים — Compensation Fund',
-      useCase: 'employer_change', useCaseLabel: '🏢 החלפת מעסיק — Employer Change',
-      priority: 'Medium', status: 'COMPLETED', minutesAgo: 310,
-      memberData: { member_id: '34567890', member_name: 'Tamar Avraham', fund_type: 'compensation', use_case: 'employer_change', balance: 145000, current_employer: 'Migdal', new_employer: 'Phoenix', phone: '052-8765432', email: 'tamar.avraham@gmail.com', birth_date: '1982-09-15', account_number: '234567890123', account_owner: 'Tamar Avraham', id_photo_confidence: 91, gap_days: 14, employer_approval_received: true, continuous_employment: true, transfer_balance: 145000, severance_included: true },
-      outcome: { type: 'approved', message: 'Employer change approved — funds transferred from Migdal to Phoenix.' },
-      validations: [
-        { id: 'v1', name: 'Identity Verification', category: 'identity', severity: 'blocking', source: 'ISA-DID-2024', rule: 'id_photo_confidence >= 85', description: 'Verify identity' },
-        { id: 'v2', name: 'Employment Gap Check', category: 'eligibility', severity: 'blocking', source: 'CL-20.1', rule: 'gap_days <= 45', description: 'Employment gap within limit' },
-        { id: 'v3', name: 'Employer Approval', category: 'processing', severity: 'blocking', source: 'CL-20.3', rule: 'employer_approval_received == true', description: 'Previous employer consent' },
-        { id: 'v4', name: 'Severance Continuity', category: 'processing', severity: 'warning', source: 'CL-20.5', rule: 'continuous_employment == true', description: 'Verify continuous employment' },
-      ],
-      validationStatuses: ['pass', 'pass', 'pass', 'pass'],
-      validationResults: [
-        { passed: true, actual_value: '91%', message: 'Identity verified' },
-        { passed: true, actual_value: '14 days', message: 'Gap of 14 days within 45 day limit' },
-        { passed: true, actual_value: 'true', message: 'Employer approval received' },
-        { passed: true, actual_value: 'true', message: 'Continuous employment verified' },
-      ],
-    },
-    {
-      processId: 'PROC-55219', memberName: 'Eyal Peretz', fundType: 'study',
-      fundTypeLabel: 'קרן השתלמות — Study Fund',
-      useCase: 'early_redemption', useCaseLabel: '⏰ פדיון מוקדם — Early Redemption',
-      priority: 'High', status: 'AWAITING_CONSENT', minutesAgo: 28,
-      memberData: { member_id: '56789012', member_name: 'Eyal Peretz', fund_type: 'study', use_case: 'early_redemption', total_balance: 312000, general_track_balance: 187000, stock_track_balance: 125000, redemption_amount: 200000, redemption_reason: 'Financial hardship', phone: '050-5678901', email: 'eyal.peretz@gmail.com', birth_date: '1988-04-20', account_number: '678901234567', account_owner: 'Eyal Peretz', id_photo_confidence: 95, supporting_documents: true, tax_aware: true, employer_notified: true, liquidity_date: '2027-06-01' },
-      outcome: { type: 'tax_consent', message: 'Early redemption approved pending tax consent.', breakdown: { gross: 200000, tax: 60000, taxRate: 30, fee: 0, feeRate: 0, net: 140000 } },
-      validations: [
-        { id: 'v1', name: 'Identity Verification', category: 'identity', severity: 'blocking', source: 'ISA-DID-2024', rule: 'id_photo_confidence >= 90', description: 'Verify identity' },
-        { id: 'v2', name: 'Supporting Documents', category: 'eligibility', severity: 'blocking', source: 'CL-30.1', rule: 'supporting_documents == true', description: 'Required documentation' },
-        { id: 'v3', name: 'Qualifying Reason', category: 'eligibility', severity: 'blocking', source: 'CL-30.5', rule: 'redemption_reason in qualifying_list', description: 'Valid early redemption reason' },
-        { id: 'v4', name: 'Tax Calculation', category: 'financial', severity: 'info', source: 'CL-30.3', rule: 'calculate capital gains tax', description: 'Calculate applicable taxes' },
-      ],
-      validationStatuses: ['pass', 'pass', 'pass', 'pass'],
-      validationResults: [
-        { passed: true, actual_value: '95%', message: 'Identity verified' },
-        { passed: true, actual_value: 'true', message: 'Supporting documents provided' },
-        { passed: true, actual_value: 'Financial hardship', message: 'Qualifying reason accepted' },
-        { passed: true, actual_value: '₪60,000 tax', message: '30% capital gains tax on ₪200,000' },
-      ],
-    },
-  ]
-
-  const now = new Date()
-  return demoData.map(d => {
-    const ts = new Date(now.getTime() - d.minutesAgo * 60000)
-    const slaDate = new Date(ts)
-    slaDate.setDate(slaDate.getDate() + 5)
-    return {
-      id: d.processId,
-      processId: d.processId,
-      timestamp: ts.toISOString(),
-      timestampDisplay: ts.toLocaleString('en-GB', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
-      memberName: d.memberName,
-      fundType: d.fundType,
-      fundTypeLabel: d.fundTypeLabel,
-      useCase: d.useCase,
-      useCaseLabel: d.useCaseLabel,
-      priority: d.priority,
-      slaDeadline: slaDate.toISOString(),
-      status: d.status,
-      memberData: d.memberData,
-      contract: { contract_id: `CTR-2024-${Math.floor(1000 + Math.random() * 9000)}`, customer_name: d.memberName, insurance_company: ['Menora Mivtachim', 'Migdal Insurance', 'Harel Insurance', 'The Phoenix', 'Clal Insurance'][Math.floor(Math.random() * 5)], effective_date: '2022-01-15', expiry_date: '2032-01-15', clauses: [{ clause_id: 'SLA-1', category: 'sla', title: 'Processing Time SLA', description: 'Standard: 5 business days. Complex: 14 business days.', conditions: [], consequence: 'notify', sla_business_days: 5, sla_complex_business_days: 14 }] },
-      regulations: [],
-      analysisMessages: [{ icon: '✅', text: `Flow completed: ${d.validations.length} validation steps`, done: true }],
-      validations: d.validations,
-      validationStatuses: d.validationStatuses,
-      validationResults: d.validationResults,
-      outcome: d.outcome,
-      auditEntries: [
-        { action: 'Request intake', category: 'system', source: '—', result: 'SUCCESS', details: `Process initiated`, timestamp: ts.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) },
-        ...d.validations.map((v, i) => ({
-          action: v.name, category: v.category, source: v.source || '—',
-          result: d.validationStatuses[i] === 'pass' ? 'PASS' : d.validationStatuses[i] === 'fail' ? 'FAIL' : d.validationStatuses[i] === 'hitl_waiting' ? 'PAUSED' : 'WARNING',
-          details: d.validationResults[i]?.message || 'Pending',
-          timestamp: new Date(ts.getTime() + (i + 1) * 2000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-        })),
-        ...(d.outcome ? [{ action: 'Outcome determination', category: 'system', source: '—', result: d.outcome.type === 'approved' ? 'SUCCESS' : d.outcome.type === 'blocked' ? 'FAIL' : 'WARNING', details: d.outcome.message, timestamp: new Date(ts.getTime() + (d.validations.length + 1) * 2000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }] : []),
-      ],
-      error: null,
-    }
-  })
-}
-
 export default function App() {
   const t = useT()
   const [activeTab, setActiveTab] = useState('dashboard')
@@ -257,6 +75,24 @@ export default function App() {
   const [apiKey, setApiKey] = useState(() => localStorage.getItem('flowmaze_api_key') || '')
   const [isLaunching, setIsLaunching] = useState(false)
 
+  const [regulationFiles, setRegulationFiles] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('flowmaze_reg_files') || '[]')
+    } catch { return [] }
+  })
+  const [manualEntries, setManualEntries] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('flowmaze_reg_manual') || '[]')
+    } catch { return [] }
+  })
+
+  useEffect(() => {
+    try { localStorage.setItem('flowmaze_reg_files', JSON.stringify(regulationFiles)) } catch {}
+  }, [regulationFiles])
+  useEffect(() => {
+    try { localStorage.setItem('flowmaze_reg_manual', JSON.stringify(manualEntries)) } catch {}
+  }, [manualEntries])
+
   const [executions, setExecutions] = useState([])
   const abortRefs = useRef({})
   const hitlResolvers = useRef({})
@@ -269,11 +105,15 @@ export default function App() {
   const handleGenerate = useCallback(() => {
     const data = generateMemberData(fundType, useCase)
     const ctr = generateContract(fundType, useCase, data)
-    const regs = generateRegulations(useCase)
+    const kbEntries = [
+      ...regulationFiles.flatMap(f => f.entries || []),
+      ...manualEntries,
+    ]
+    const regs = kbEntries.length > 0 ? kbEntries : generateRegulations(useCase)
     setMemberData(data)
     setContract(ctr)
     setRegulations(regs)
-  }, [fundType, useCase])
+  }, [fundType, useCase, regulationFiles, manualEntries])
 
   const updateExecution = useCallback((id, updates) => {
     setExecutions(prev => prev.map(ex => ex.id === id ? { ...ex, ...updates } : ex))
@@ -777,6 +617,16 @@ export default function App() {
               {t('header.builder')}
             </button>
             <button
+              onClick={() => setActiveTab('regulations')}
+              className={`px-4 py-3.5 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'regulations'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-text-muted hover:text-text-primary'
+              }`}
+            >
+              {t('header.regulations')}
+            </button>
+            <button
               onClick={() => setActiveTab('settings')}
               className={`px-4 py-3.5 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === 'settings'
@@ -833,7 +683,17 @@ export default function App() {
         )}
 
         {activeTab === 'settings' && (
-          <SettingsPanel />
+          <SettingsPanel apiKey={apiKey} setApiKey={handleSetApiKey} />
+        )}
+
+        {activeTab === 'regulations' && (
+          <RegulationsManagement
+            files={regulationFiles}
+            setFiles={setRegulationFiles}
+            manualEntries={manualEntries}
+            setManualEntries={setManualEntries}
+            apiKey={apiKey}
+          />
         )}
 
         {activeTab === 'executions' && !selectedExecutionId && (

@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import FlowExecution from './FlowExecution'
+import FlowExecution from './flow/FlowExecution'
 import AuditTrail from './AuditTrail'
 import HitlPanel from './HitlPanel'
 import DriverUPayload from './ApiLogsPanel'
 import ClaudeLogPanel from './ClaudeLogPanel'
-import { useT } from './i18n'
+import { useT } from '../../i18n'
 
 const STATUS_COLORS = {
   RUNNING: 'bg-accent/20 text-accent',

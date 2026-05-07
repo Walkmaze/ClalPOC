@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import FlowDiagram from './FlowDiagram'
-import { useT, useLoc } from './i18n'
+import { useT, useLoc } from '../../../i18n'
 
 const CATEGORY_COLORS = {
   identity: 'bg-purple-500/20 text-purple-300',

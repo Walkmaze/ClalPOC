@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useT, useLoc } from './i18n'
+import { useT, useLoc } from '../../i18n'
 
 const RESULT_STYLES = {
   SUCCESS: 'text-success',
